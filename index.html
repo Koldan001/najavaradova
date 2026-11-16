@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Branimir Koldan</title>
+<meta name="description" content="Branimir Koldan, final-year engineering student in Novi Sad, working on DevOps and AI engineering. Builds and runs NajavaRadova.rs, outage alerts for Serbia.">
+<meta name="theme-color" content="#14160f">
+<link rel="canonical" href="https://koldan.dev/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://koldan.dev/">
+<meta property="og:title" content="Branimir Koldan · DevOps and AI engineering">
+<meta property="og:description" content="Builds and runs NajavaRadova.rs, outage alerts for Serbia. Open to internship or junior roles.">
+<meta property="og:image" content="https://koldan.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%23e9d47c'/%3E%3Cg fill='%2314160f'%3E%3Crect x='1' y='3' width='2' height='10'/%3E%3Crect x='1' y='3' width='5' height='2'/%3E%3Crect x='1' y='7' width='5' height='2'/%3E%3Crect x='1' y='11' width='5' height='2'/%3E%3Crect x='5' y='4' width='2' height='4'/%3E%3Crect x='5' y='8' width='2' height='4'/%3E%3Crect x='9' y='3' width='2' height='10'/%3E%3Crect x='13' y='3' width='2' height='2'/%3E%3Crect x='12' y='5' width='2' height='2'/%3E%3Crect x='11' y='7' width='2' height='2'/%3E%3Crect x='12' y='9' width='2' height='2'/%3E%3Crect x='13' y='11' width='2' height='2'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Stardos+Stencil:wght@700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --panel:#4c5844; --panel-2:#3e4637; --hi:#8a9382; --lo:#262b20;
+  --text:#e1e6da; --muted:#a9b39f; --sel:#958831;
+  --ok:#8fd16a; --warn:#e3c95b; --bad:#ff8466; --link:#b4d6ff;
+  --stencil:'Stardos Stencil', Impact, 'Arial Black', sans-serif;
+  --ui:Verdana, Tahoma, 'DejaVu Sans', sans-serif;
+  --mono:'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:#14160f;color:var(--text);font-family:var(--ui);font-size:12.5px;line-height:1.55}
+a{color:var(--link);text-underline-offset:2px}a:hover{color:#fff}
+:focus-visible{outline:1px dotted #fff;outline-offset:2px}
+button{font-family:var(--ui)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- stage ---------- */
+.game{position:relative;height:100%;min-height:720px;overflow:hidden;isolation:isolate}
+.scene{position:absolute;inset:0;width:100%;height:100%;z-index:-2;display:block;filter:blur(2.5px) saturate(.62) sepia(.28) contrast(1.12) brightness(.74);transform:scale(1.02)}
+.shade{position:absolute;inset:0;z-index:-1;background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px),radial-gradient(ellipse at 60% 45%,transparent 35%,rgba(5,6,3,.72) 100%),linear-gradient(90deg,rgba(8,10,6,.86) 0%,rgba(8,10,6,.62) 30%,rgba(8,10,6,.22) 60%,rgba(8,10,6,.12) 100%)}
+
+.logo{position:absolute;left:5%;top:7%;margin:0}
+.logo .mark{display:block;font-family:var(--stencil);font-weight:700;font-size:clamp(40px,5vw,66px);line-height:.95;color:#ece7d5;letter-spacing:2px;text-shadow:2px 2px 0 rgba(0,0,0,.6)}
+.logo .mark small{display:block;font-size:.5em;letter-spacing:4px;color:#cfc8ae}
+.logo .tag{display:block;margin-top:10px;font-family:var(--mono);font-size:12.5px;font-weight:400;color:#d6d0b8;letter-spacing:.5px}
+.logo .tag i{font-style:normal;color:var(--ok)}
+
+.menu{position:absolute;left:5%;bottom:13%;display:flex;flex-direction:column;gap:1px}
+.menu button{background:transparent;border:0;color:#dcd9c9;font-size:16px;text-align:left;padding:6px 14px 6px 2px;cursor:pointer;min-height:36px;letter-spacing:.3px;text-shadow:1px 1px 0 #000;display:flex;gap:12px;align-items:baseline}
+.menu button kbd{font-family:var(--mono);font-size:10.5px;color:rgba(220,217,201,.45);min-width:12px}
+.menu button:hover,.menu button[aria-expanded="true"]{color:#fff;background:linear-gradient(90deg,rgba(149,136,49,.6),transparent)}
+.menu .gap{height:14px}
+.hint{position:absolute;left:5%;bottom:6%;font-family:var(--mono);font-size:11px;color:rgba(230,226,210,.5)}
+.ver{position:absolute;right:16px;bottom:10px;font-family:var(--mono);font-size:11px;color:rgba(240,236,220,.6);text-shadow:1px 1px 0 #000}
+
+/* ---------- VGUI windows ---------- */
+.win{position:absolute;left:var(--x);top:var(--y);width:var(--w);background:var(--panel);border:1px solid;border-color:var(--hi) var(--lo) var(--lo) var(--hi);display:none;flex-direction:column;box-shadow:5px 7px 0 rgba(0,0,0,.35);max-height:calc(100% - 40px)}
+.win.open{display:flex}
+.tb{display:flex;justify-content:space-between;align-items:center;padding:6px 6px 6px 10px;color:#fff;gap:10px;cursor:default;user-select:none}
+.tb .t{font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb .meta{color:var(--muted);font-size:11px;font-weight:normal}
+.x{width:20px;height:18px;flex:none;background:var(--panel);border:1px solid;border-color:var(--hi) var(--lo) var(--lo) var(--hi);color:var(--text);font-size:11px;line-height:1;padding:0;cursor:pointer}
+.sunk{background:var(--panel-2);border:1px solid;border-color:var(--lo) var(--hi) var(--hi) var(--lo)}
+.body{margin:0 10px;overflow:auto;min-height:0}
+.pad{padding:14px 16px}
+.btn{font-size:12px;background:var(--panel);color:var(--text);border:1px solid;border-color:var(--hi) var(--lo) var(--lo) var(--hi);padding:5px 16px;cursor:pointer;min-height:30px;text-decoration:none;display:inline-flex;align-items:center}
+.btn:active{border-color:var(--lo) var(--hi) var(--hi) var(--lo)}
+.btn:hover{color:#fff}
+.btn.primary{background:#5b6a4e}
+/* tabs, like an old server browser */
+.tabs{display:flex;gap:2px;padding:2px 10px 0;position:relative;z-index:1;margin-bottom:-1px;flex-wrap:wrap}
+.tab{font-size:12px;background:var(--panel-2);color:var(--muted);border:1px solid;border-color:var(--hi) var(--lo) var(--hi) var(--hi);padding:4px 16px;min-height:26px;cursor:pointer}
+.tab:hover{color:#fff}
+.tab[aria-selected="true"]{background:var(--panel);color:#fff;border-bottom-color:var(--panel);padding-top:6px;margin-top:-2px}
+.tabframe{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;margin:0 10px;padding:10px 0 0;border:1px solid;border-color:var(--hi) var(--lo) var(--lo) var(--hi)}
+.tabframe>.sbody{flex:1 1 auto;min-height:0;padding:0 10px}
+.tabframe>.sbody[hidden]{display:none}
+.filt{display:flex;align-items:center;gap:6px}
+.filt .field{width:150px;min-height:26px}
+.chip.learn{border-style:dashed;color:var(--warn);border-color:var(--warn)}
+.wfoot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;color:var(--muted);font-size:11px;flex-wrap:wrap}
+.wfoot .acts{display:flex;gap:6px;margin-left:auto}
+
+h2.h{margin:0 0 2px;font-size:15px;color:#fff}
+.lead{margin:0 0 12px;color:var(--muted)}
+p{margin:0 0 10px}
+.kv{display:grid;grid-template-columns:104px minmax(0,1fr);gap:4px 12px;margin:0}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;overflow-wrap:anywhere}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.chip{font-family:var(--mono);font-size:10.5px;padding:0 6px;border:1px solid var(--hi);color:var(--muted);white-space:nowrap}
+.chip.ok{color:var(--ok);border-color:var(--ok)}
+.chip.warn{color:var(--warn);border-color:var(--warn)}
+.cap{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:12px 0 4px}
+ul.list{margin:0;padding:0;list-style:none}
+ul.list li{padding-left:14px;position:relative;margin:2px 0}
+ul.list li::before{content:"\25B8";position:absolute;left:0;color:var(--muted)}
+
+/* about */
+.about-top{display:flex;gap:16px;align-items:flex-start;margin-bottom:12px}
+.spray{width:64px;height:64px;flex:none;image-rendering:pixelated;border:1px solid var(--lo)}
+.photo{width:96px;height:96px;object-fit:cover;object-position:50% 30%;filter:saturate(.72) contrast(1.05);image-rendering:auto;border:1px solid;border-color:var(--lo) var(--hi) var(--hi) var(--lo)}
+.ctas{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px}
+.about .list li{margin:5px 0}
+.about b{color:#fff;font-weight:normal}
+
+/* server browser (projects, experience) */
+.sbody{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:8px;padding:0 10px;min-height:0}
+.row{display:grid;grid-template-columns:18px minmax(0,1fr) var(--c2,100px) 84px;gap:8px;align-items:center;padding:7px 8px;cursor:pointer;font-variant-numeric:tabular-nums}
+.row span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row.head{cursor:default;color:var(--muted);font-size:11px;border-bottom:1px solid var(--lo);padding-top:5px;padding-bottom:5px}
+.row:not(.head):hover{background:rgba(255,255,255,.05)}
+.row[aria-selected="true"]{background:var(--sel);color:#fff}
+.row[aria-selected="true"] .st{color:#fff !important}
+.st{font-size:11px}
+.listbox{min-height:240px}
+.ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;display:block}
+.row .rk{color:var(--muted);display:flex}
+.row[aria-selected="true"] .rk{color:#fff}
+.feats{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px 12px;margin:2px 0}
+.feat{display:flex;gap:8px;align-items:center;font-size:12px;line-height:1.3}
+.feat .ic{color:var(--warn)}
+.fh{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin:6px 0 0}
+.motd .feats{margin:6px 0 4px}
+.motd .feat{font-size:13px}
+.info{padding:12px;display:flex;flex-direction:column;gap:8px}
+.info .when{font-family:var(--mono);font-size:11.5px;color:var(--warn)}
+.info h3{margin:0;font-size:13px;color:#fff}
+.info p{margin:0}
+
+/* skills */
+.skills{display:grid;gap:12px}
+.skills section h3{margin:0 0 6px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:normal;border-bottom:1px solid rgba(0,0,0,.3);padding-bottom:4px}
+.skills .chips .chip{font-family:var(--ui);font-size:12px;color:var(--text);padding:1px 8px;background:var(--panel)}
+.skills .chips .chip.learn{color:var(--warn);border-color:var(--warn);background:transparent}
+
+/* contact */
+.clist{display:grid;gap:8px}
+.cline{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;background:var(--panel)}
+.cline span{color:var(--muted)}
+.cline a{overflow-wrap:anywhere}
+.copy{font-size:11px;background:var(--panel-2);color:var(--text);border:1px solid var(--hi);padding:2px 10px;cursor:pointer;min-height:26px}
+
+/* console */
+.co-log{font-family:var(--mono);font-size:12px;line-height:1.5;height:230px;overflow:hidden;padding:8px 10px;display:flex;flex-direction:column;justify-content:flex-end}
+.field{background:var(--panel-2);color:var(--text);border:1px solid;border-color:var(--lo) var(--hi) var(--hi) var(--lo);font-family:var(--mono);font-size:12px;padding:4px 6px;height:30px;width:100%}
+
+/* dialogs */
+.ovl{position:fixed;inset:0;background:rgba(6,8,4,.35);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.ovl.on{display:flex}
+.dlg{background:var(--panel);border:1px solid;border-color:var(--hi) var(--lo) var(--lo) var(--hi);width:100%;max-width:640px}
+.ovl.on .dlg{animation:pop .16s ease-out}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.bar{height:14px;background:var(--panel-2);border:1px solid;border-color:var(--lo) var(--hi) var(--hi) var(--lo)}
+.bar i{display:block;height:100%;width:0;background:var(--sel)}
+.motd{background:var(--panel-2);color:#e6eae0;margin:0 10px;padding:18px 20px;line-height:1.65;font-size:13px;border:1px solid;border-color:var(--lo) var(--hi) var(--hi) var(--lo);max-height:min(66vh,560px);overflow:auto}
+.motd h2{font-family:var(--stencil);font-weight:700;color:#e9d47c;font-size:24px;margin:0 0 6px;letter-spacing:1px}
+.motd h3{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin:16px 0 4px;font-weight:normal}
+.motd ul{margin:0;padding-left:18px}
+.motd li{margin:3px 0}
+.motd .pipe{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:12px 0;font-family:var(--mono);font-size:11.5px}
+.motd .pipe span{border:1px solid var(--hi);background:var(--panel);padding:2px 8px}
+.motd .pipe b{color:var(--muted);font-weight:normal}
+#bye{position:fixed;inset:0;background:#000;color:#ddd;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:60;text-align:center;padding:20px}
+#bye.on{display:flex}
+#bye .mark{font-family:var(--stencil);font-size:42px;color:#e8e4d4;letter-spacing:2px}
+
+/* ---------- window stack: only the top window is usable ---------- */
+.win.under{filter:brightness(.68) saturate(.8)}
+.win.under .tb{color:var(--muted)}
+.tbb{display:flex;gap:3px}
+.win>.body,.win>.sbody{flex:1 1 auto;min-height:0}
+.sbody>.sunk{overflow:auto;min-height:0}
+@media (min-width:861px){.win{max-height:calc(100% - var(--y) - 20px);resize:both;overflow:hidden;min-width:300px;min-height:150px}}
+.win.max{left:12px !important;top:12px !important;width:calc(100% - 24px) !important;height:calc(100% - 24px) !important;max-height:none}
+
+/* ---------- phones ---------- */
+@media (max-width:860px){
+  .game{height:auto;min-height:100%;overflow:visible;padding:22px 12px 40px;display:flex;flex-direction:column;gap:14px}
+  .logo,.menu,.ver,.hint{position:static}
+  .menu{flex-direction:row;flex-wrap:wrap;gap:4px}
+  .menu button{font-size:13px;border:1px solid rgba(217,214,198,.25);padding:6px 12px;background:rgba(0,0,0,.4)}
+  .menu button kbd,.menu .gap,.hint{display:none}
+  .win{position:static;width:100% !important;max-height:none;box-shadow:none}
+  .sbody{grid-template-columns:1fr}
+  .info{max-height:none}
+  .win.max{height:auto !important}
+  .tbb .mx{display:none}
+  .shade{background:rgba(8,10,6,.74)}
+  .ver{text-align:center}
+}
+@media (max-width:480px){.row{grid-template-columns:18px minmax(0,1fr) 84px}.c-type{display:none}.kv{grid-template-columns:1fr}.kv dt{margin-top:4px}.cline{grid-template-columns:1fr auto}.cline span{grid-column:1/-1}}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+</style>
+</head>
+<body>
+<div class="game" id="game">
+
+  <!-- Original scene: a sunlit sandstone courtyard. Drawn by hand, no game assets. -->
+  <svg class="scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6f9cc0"/><stop offset=".55" stop-color="#bfd0d6"/><stop offset="1" stop-color="#e9dcbc"/></linearGradient>
+      <linearGradient id="sand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cdb084"/><stop offset="1" stop-color="#a98b5c"/></linearGradient>
+      <pattern id="blocks" width="96" height="44" patternUnits="userSpaceOnUse">
+        <path d="M0 21.5H96M0 43.5H96M0 0V22M48 22V44" stroke="rgba(80,52,22,.28)" stroke-width="2" fill="none"/>
+      </pattern>
+      <radialGradient id="sunGlow"><stop offset="0" stop-color="#fff8dc" stop-opacity=".95"/><stop offset=".35" stop-color="#fff1c2" stop-opacity=".5"/><stop offset="1" stop-color="#fff1c2" stop-opacity="0"/></radialGradient>
+      <pattern id="planks" width="18" height="10" patternUnits="userSpaceOnUse"><path d="M17 0V10" stroke="rgba(10,25,40,.45)" stroke-width="2"/></pattern>
+      <pattern id="awning" width="40" height="10" patternUnits="userSpaceOnUse"><rect width="20" height="10" fill="#b2462f"/><rect x="20" width="20" height="10" fill="#e8dcc2"/></pattern>
+      <filter id="grain" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"/>
+        <feColorMatrix values="0 0 0 0 .32  0 0 0 0 .22  0 0 0 0 .1  0 0 0 .55 0"/>
+      </filter>
+    </defs>
+
+    <rect width="1600" height="900" fill="url(#sky)"/>
+    <g><circle cx="1430" cy="120" r="150" fill="url(#sunGlow)"/><circle cx="1430" cy="120" r="40" fill="#fff6d6"/></g>
+    <g fill="#fff">
+      <g transform="translate(1120 0)" opacity=".85"><ellipse cx="0" cy="110" rx="90" ry="22"/><ellipse cx="50" cy="96" rx="60" ry="26"/><ellipse cx="-50" cy="104" rx="50" ry="18"/></g>
+      <g transform="translate(880 0)" opacity=".6"><ellipse cx="0" cy="185" rx="120" ry="18"/><ellipse cx="40" cy="173" rx="70" ry="20"/></g>
+      <g transform="translate(560 0)" opacity=".75"><ellipse cx="0" cy="58" rx="70" ry="16"/><ellipse cx="30" cy="48" rx="44" ry="17"/></g>
+    </g>
+    <!-- distant town -->
+    <g fill="#d2c2a0" opacity=".75">
+      <rect x="380" y="300" width="120" height="120"/><rect x="490" y="270" width="80" height="150"/>
+      <path d="M600 330a50 50 0 0 1 100 0v90H600z"/><rect x="645" y="230" width="12" height="70"/>
+      <rect x="980" y="285" width="140" height="135"/><rect x="1110" y="310" width="90" height="110"/>
+      <rect x="1040" y="220" width="26" height="70"/><path d="M1036 222h34l-17-26z"/>
+    </g>
+    <!-- palm behind the back wall -->
+    <g>
+      <path d="M1225 470C1232 400 1240 330 1262 262" stroke="#6d5332" stroke-width="12" fill="none" stroke-linecap="round"/>
+      <g fill="#4f6b33">
+        <path d="M1262 262c-40-10-90 0-120 30 40-16 80-20 120-22z"/><path d="M1262 262c30-30 85-38 120-22-44 0-82 8-120 28z"/>
+        <path d="M1262 262c-20-30-60-50-98-48 36 12 66 30 92 54z"/><path d="M1262 262c18-36 52-58 90-60-32 18-58 38-84 66z"/>
+        <path d="M1262 262c-34 20-56 54-58 92 16-36 36-62 64-86z"/><path d="M1262 262c40 14 66 44 72 82-20-34-44-56-76-76z"/>
+      </g>
+    </g>
+
+    <!-- back wall with a passage -->
+    <rect x="360" y="330" width="900" height="370" fill="#c8a36d"/>
+    <rect x="360" y="330" width="900" height="370" fill="url(#blocks)"/>
+    <rect x="352" y="318" width="916" height="16" fill="#b08a55"/>
+    <path d="M700 700V500a100 100 0 0 1 200 0v200z" fill="#e3cfa3"/>
+    <path d="M700 700V500a100 100 0 0 1 200 0v200z" fill="none" stroke="#9c7745" stroke-width="10"/>
+    <path d="M714 700V505a86 86 0 0 1 172 0v195z" fill="none" stroke="rgba(60,40,20,.25)" stroke-width="4"/>
+    <!-- sunny yard seen through the arch -->
+    <rect x="760" y="600" width="70" height="60" fill="#a8844f" stroke="#7c5c30" stroke-width="4"/>
+    <rect x="1030" y="440" width="70" height="90" fill="#3b2b1a"/><rect x="1024" y="432" width="82" height="10" fill="#8a6a3a"/>
+
+    <!-- left building, in perspective -->
+    <path d="M0 110L360 230V700L0 760z" fill="#b48f59"/>
+    <path d="M0 110L360 230V700L0 760z" fill="url(#blocks)" opacity=".8"/>
+    <path d="M0 100L372 222V238L0 118z" fill="#94723f"/>
+    <g fill="#2f2316">
+      <path d="M70 250l70 18v110l-70-14z"/><path d="M220 290l70 18v104l-70-14z"/>
+      <path d="M90 470l90 20v200l-90 10z"/>
+    </g>
+    <g fill="#6b4f2c"><rect x="60" y="240" width="90" height="10" transform="skewY(14)"/><rect x="210" y="226" width="90" height="10" transform="skewY(14)"/></g>
+    <g stroke="#5a4123" stroke-width="7"><path d="M60 404l-30 6M200 434l-30 6M330 466l-30 6"/></g>
+
+    <!-- right building with a blue door and an awning -->
+    <path d="M1260 230L1600 90V780L1260 700z" fill="#a8844f"/>
+    <path d="M1260 230L1600 90V780L1260 700z" fill="url(#blocks)" opacity=".8"/>
+    <path d="M1250 222L1600 76V96L1260 240z" fill="#8a6a3a"/>
+    <path d="M1330 470l120-26v280l-120-12z" fill="#3c6f8f"/>
+    <path d="M1330 470l120-26v280l-120-12z" fill="url(#planks)"/>
+    <path d="M1320 466l140-30v-12l-140 30z" fill="#6b4f2c"/>
+    <path d="M1300 420l180-52 30 40-180 52z" fill="url(#awning)"/>
+    <path d="M1470 300l70-18v80l-70 16z" fill="#2f2316"/>
+
+    <!-- ground -->
+    <path d="M0 700H1600V900H0z" fill="url(#sand)"/>
+    <g stroke="rgba(90,62,30,.22)" stroke-width="2">
+      <path d="M800 700L80 900M800 700L380 900M800 700L680 900M800 700L940 900M800 700L1240 900M800 700L1560 900"/>
+      <path d="M0 760H1600M0 830H1600"/>
+    </g>
+
+    <!-- props -->
+    <g>
+      <rect x="980" y="590" width="130" height="130" fill="#8a6a3a" stroke="#5f4824" stroke-width="6"/>
+      <path d="M986 596l118 118M1104 596L986 714" stroke="#6e5229" stroke-width="7"/>
+      <rect x="1010" y="490" width="96" height="100" fill="#957443" stroke="#5f4824" stroke-width="6"/>
+      <path d="M1016 496l84 88M1100 496l-84 88" stroke="#6e5229" stroke-width="6"/>
+      <rect x="1120" y="640" width="88" height="88" fill="#8a6a3a" stroke="#5f4824" stroke-width="6"/>
+      <rect x="1126" y="646" width="76" height="76" fill="none" stroke="#6e5229" stroke-width="4"/>
+    </g>
+    <g>
+      <rect x="1230" y="650" width="58" height="84" rx="6" fill="#4f6a52"/><ellipse cx="1259" cy="650" rx="29" ry="8" fill="#5f7d62"/>
+      <path d="M1230 672h58M1230 712h58" stroke="#3b5040" stroke-width="5"/>
+      <rect x="1296" y="664" width="52" height="74" rx="6" fill="#57725a"/><ellipse cx="1322" cy="664" rx="26" ry="7" fill="#6a8a6d"/>
+    </g>
+    <!-- sun shadow from the left building -->
+    <path d="M0 760L360 700L560 900H0z" fill="rgba(40,26,10,.32)"/>
+    <path d="M360 330L560 330L460 700L360 700z" fill="rgba(40,26,10,.18)"/>
+
+    <!-- dust grain over walls and ground -->
+    <rect y="200" width="1600" height="700" filter="url(#grain)" opacity=".35"/>
+  </svg>
+  <div class="shade" aria-hidden="true"></div>
+
+  <h1 class="logo">
+    <span class="mark">BRANIMIR<small>KOLDAN</small></span>
+    <span class="tag">DevOps · AI engineering · Novi Sad · <i>open to work</i></span>
+  </h1>
+
+  <nav class="menu" aria-label="Main menu">
+    <button type="button" data-open="w-about"><kbd>1</kbd>About</button>
+    <button type="button" data-open="w-projects"><kbd>2</kbd>Projects</button>
+    <button type="button" data-open="w-exp"><kbd>3</kbd>Experience</button>
+    <button type="button" data-open="w-skills"><kbd>4</kbd>Skills</button>
+    <button type="button" data-open="w-contact"><kbd>5</kbd>Contact</button>
+    <span class="gap" aria-hidden="true"></span>
+    <button type="button" data-open="w-quit"><kbd></kbd>Quit</button>
+  </nav>
+  <div class="hint">keys 1–5 open windows · ~ console · esc closes</div>
+
+  <!-- ABOUT -->
+  <section class="win" id="w-about" aria-labelledby="t-about" style="--x:36%;--y:6%;--w:min(640px,calc(64% - 24px))">
+    <div class="tb"><span class="t" id="t-about">About</span><button class="x" type="button" data-close aria-label="Close About">x</button></div>
+    <div class="body sunk pad about">
+      <div class="about-top">
+        <img class="spray photo" id="photo" src="photo.jpg" alt="Branimir Koldan" width="96" height="96" hidden>
+        <canvas class="spray" id="spray" width="16" height="16" role="img" aria-label="Pixel B logo"></canvas>
+        <div>
+          <h2 class="h">Branimir Koldan</h2>
+          <p class="lead" style="margin:0 0 6px">Final-year engineering student · DevOps and AI engineering · Novi Sad</p>
+          <div class="chips"><span class="chip ok">open to work</span><span class="chip">internship or junior</span><span class="chip">Serbian · English B2</span></div>
+        </div>
+      </div>
+
+      <p>I'm a final-year engineering student in Novi Sad who likes building systems that keep running on their own. I care about reliability over flash: services that don't need babysitting, automation that takes repetitive work off people's plates, and AI that can be trusted in production. My main project, <a href="https://najavaradova.rs" target="_blank" rel="noopener">NajavaRadova.rs</a>, is a live service I built and run alone, from the code to the server it runs on.</p>
+
+      <div class="cap">What I do</div>
+      <ul class="list">
+        <li><b>Run things in production.</b> Docker, CI/CD with GitHub Actions, monitoring that tells me when something stops, and same-day fixes.</li>
+        <li><b>Make LLMs dependable.</b> Structured output, validation rules, a second-model check before risky alerts, and a hand-labelled test set.</li>
+        <li><b>Automate boring work.</b> From a payment and lesson-plan tool for Kodland tutors to n8n workflows.</li>
+      </ul>
+
+      <div class="cap">How I work</div>
+      <p>Fix the cause for every case, not just the one that broke. When the system is unsure, it holds and asks instead of guessing. And I don't ship code I can't explain.</p>
+
+      <div class="cap">Outside of work</div>
+      <p>Engineering has pulled me since I was a kid; I'm a builder more than an artist. Away from the keyboard it's games and movies. In the next few years I want to automate as much repetitive work as I can.</p>
+
+      <dl class="kv">
+        <dt>Studies</dt><dd>B.Sc. Computing and Control Engineering, FTN Novi Sad (expected 2027)</dd>
+        <dt>Learning</dt><dd>Grafana, Terraform, backups with a tested restore</dd>
+        <dt>Looking for</dt><dd>Internship or junior role in DevOps or AI engineering</dd>
+      </dl>
+      <div class="ctas">
+        <button class="btn primary" type="button" data-open="w-projects">See projects</button>
+        <button class="btn" type="button" data-open="w-exp">Experience</button>
+        <button class="btn" type="button" data-open="w-contact">Contact</button>
+        <a class="btn" href="Branimir_Koldan_CV.pdf" download>Download CV (PDF)</a>
+      </div>
+    </div>
+    <div class="wfoot"><span>Novi Sad · CET</span></div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section class="win" id="w-browse" aria-labelledby="t-browse" style="--x:36%;--y:6%;--w:min(820px,calc(64% - 24px))">
+    <div class="tb"><span class="t" id="t-browse">Portfolio <span class="meta" id="browse-count"></span></span><button class="x" type="button" data-close aria-label="Close Portfolio">x</button></div>
+    <div class="tabs" role="tablist" aria-label="Portfolio sections">
+      <button class="tab" type="button" role="tab" id="tab-projects" aria-controls="pane-projects" data-tab="projects">Projects</button>
+      <button class="tab" type="button" role="tab" id="tab-exp" aria-controls="pane-exp" data-tab="exp">Experience</button>
+      <button class="tab" type="button" role="tab" id="tab-edu" aria-controls="pane-edu" data-tab="edu">Education</button>
+      <button class="tab" type="button" role="tab" id="tab-skills" aria-controls="pane-skills" data-tab="skills">Skills</button>
+    </div>
+    <div class="tabframe">
+      <div class="sbody" role="tabpanel" id="pane-projects" aria-labelledby="tab-projects" data-browser="projects"></div>
+      <div class="sbody" role="tabpanel" id="pane-exp" aria-labelledby="tab-exp" data-browser="exp" hidden></div>
+      <div class="sbody" role="tabpanel" id="pane-edu" aria-labelledby="tab-edu" data-browser="edu" hidden></div>
+      <div class="sbody" role="tabpanel" id="pane-skills" aria-labelledby="tab-skills" data-browser="skills" hidden></div>
+      <div class="wfoot"><label class="filt">Filter <input class="field" id="filt" type="search" autocomplete="off" spellcheck="false" placeholder="e.g. Python"></label><span id="ftip"></span><span class="acts"><button class="btn primary" type="button" id="bconnect">Connect</button></span></div>
+    </div>
+    <div style="height:10px"></div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="win" id="w-contact" aria-labelledby="t-contact" style="--x:48%;--y:22%;--w:min(440px,calc(52% - 24px))">
+    <div class="tb"><span class="t" id="t-contact">Contact</span><button class="x" type="button" data-close aria-label="Close Contact">x</button></div>
+    <div class="body sunk pad">
+      <p>Open to an internship or junior role in DevOps or AI engineering. Email or phone is the fastest way to reach me.</p>
+      <div class="clist" id="clist"></div>
+    </div>
+    <div class="wfoot"><span>Usually replies within a day.</span><span class="acts"><a class="btn primary" href="Branimir_Koldan_CV.pdf" download>Download CV</a><button class="btn" type="button" data-close>Close</button></span></div>
+  </section>
+
+  <!-- CONSOLE -->
+  <section class="win" id="w-console" aria-labelledby="t-console" style="--x:38%;--y:4%;--w:min(640px,calc(62% - 24px))">
+    <div class="tb"><span class="t" id="t-console">Console</span><button class="x" type="button" data-close aria-label="Close Console">x</button></div>
+    <div class="sunk" style="margin:0 10px"><div class="co-log" id="col" aria-live="polite"></div></div>
+    <form id="cof" style="display:flex;gap:6px;padding:8px 10px"><label for="coi" class="sr">Console command</label><input class="field" id="coi" type="text" autocomplete="off" spellcheck="false"><button class="btn" type="submit">Submit</button></form>
+  </section>
+
+  <!-- QUIT -->
+  <section class="win" id="w-quit" aria-labelledby="t-quit" style="--x:calc(50% - 160px);--y:38%;--w:320px">
+    <div class="tb"><span class="t" id="t-quit">Quit</span><button class="x" type="button" data-close aria-label="Close Quit">x</button></div>
+    <div style="padding:14px 14px 4px">Are you sure you want to quit?</div>
+    <div class="wfoot"><span class="acts"><button class="btn" type="button" id="quitGo">Quit game</button><button class="btn" type="button" data-close>Cancel</button></span></div>
+  </section>
+
+  <div class="ver">koldan.dev · build 2026.11</div>
+</div>
+
+<div class="ovl" id="cx" role="dialog" aria-modal="true" aria-labelledby="cxt">
+  <div class="dlg"><div class="tb"><span class="t" id="cxt">Connecting</span></div>
+    <div style="padding:2px 12px 16px;display:flex;flex-direction:column;gap:8px"><span id="cxs">Establishing connection...</span><div class="bar"><i id="cxb"></i></div></div></div>
+</div>
+<div class="ovl" id="mo" role="dialog" aria-modal="true" aria-labelledby="mot">
+  <div class="dlg"><div class="tb"><span class="t" id="mot">Message of the day</span></div>
+    <div class="motd" id="mob"></div>
+    <div class="wfoot"><span class="acts"><button class="btn" id="ok" type="button">OK</button></span></div></div>
+</div>
+<div id="bye" role="dialog" aria-modal="true" aria-label="Game closed">
+  <div class="mark">BRANIMIR</div>
+  <div>Thanks for playing.</div>
+  <div style="color:#999;font-family:var(--mono);font-size:12px"><a href="mailto:branimirkoldan@gmail.com">branimirkoldan@gmail.com</a> · <a href="https://www.linkedin.com/in/branimir-koldan" target="_blank" rel="noopener">linkedin.com/in/branimir-koldan</a></div>
+  <button class="btn" type="button" id="reconnect">Reconnect</button>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* =========================================================
+   CONTENT: edit everything here. Layout code is below.
+   ========================================================= */
+const CONTACT=[
+  {k:'Email',v:'branimirkoldan@gmail.com',u:'mailto:branimirkoldan@gmail.com'},
+  {k:'Phone',v:'+381 69 019 3418',u:'tel:+381690193418'},
+  {k:'GitHub',v:'github.com/Koldan001',u:'https://github.com/Koldan001'},
+  {k:'LinkedIn',v:'linkedin.com/in/branimir-koldan',u:'https://www.linkedin.com/in/branimir-koldan'}
+];
+const NR='https://najavaradova.rs';
+const NRGH='https://github.com/Koldan001/najavaradova';
+
+const ICONS={web:'<circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c-2.5 3-2.5 9 0 12M8 2c2.5 3 2.5 9 0 12"/>',scrape:'<path d="M3 1.5h7l3 3v10H3z"/><path d="M10 1.5v3h3M8 7v5M6 10l2 2 2-2"/>',ai:'<rect x="4" y="4" width="8" height="8"/><path d="M6.5 6.5h3v3h-3zM6 1v3M10 1v3M6 12v3M10 12v3M1 6h3M1 10h3M12 6h3M12 10h3"/>',shield:'<path d="M8 1.5l5.5 2v4.5c0 3.3-2.4 5.6-5.5 6.5-3.1-.9-5.5-3.2-5.5-6.5V3.5z"/><path d="M5.5 8l1.8 1.8L10.8 6.3"/>',pin:'<path d="M8 14.5s4.5-4.4 4.5-8a4.5 4.5 0 0 0-9 0c0 3.6 4.5 8 4.5 8z"/><circle cx="8" cy="6.5" r="1.7"/>',map:'<path d="M1.5 3.5l4-1.5 5 1.5 4-1.5v10.5l-4 1.5-5-1.5-4 1.5z"/><path d="M5.5 2v10.5M10.5 3.5V14"/>',bell:'<path d="M4 11V7a4 4 0 0 1 8 0v4l1.5 1.5h-11z"/><path d="M6.5 14.5h3"/>',box:'<path d="M8 1.5l6 3v7l-6 3-6-3v-7z"/><path d="M2 4.5l6 3 6-3M8 7.5v7"/>',ci:'<circle cx="3" cy="8" r="1.8"/><circle cx="13" cy="8" r="1.8"/><path d="M4.8 8h6.4M9 5.8L11.2 8 9 10.2"/>',pulse:'<path d="M1 8.5h3l2-5 3 9 2-4h4"/>',sheet:'<rect x="2" y="2" width="12" height="12"/><path d="M2 6h12M2 10h12M6 2v12"/>',cal:'<rect x="2" y="3" width="12" height="11"/><path d="M2 6.5h12M5 1.5v3M11 1.5v3M5 9.5h2M9 9.5h2M5 12h2"/>',flow:'<rect x="1" y="6" width="4" height="4"/><rect x="11" y="1.5" width="4" height="4"/><rect x="11" y="10.5" width="4" height="4"/><path d="M5 8h3M8 3.5v9M8 3.5h3M8 12.5h3"/>',user:'<circle cx="8" cy="5" r="3"/><path d="M2.5 15c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/>',eye:'<path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/>',cam:'<rect x="1.5" y="4.5" width="13" height="9"/><path d="M5.5 4.5l1-2h3l1 2"/><circle cx="8" cy="9" r="2.5"/>',db:'<ellipse cx="8" cy="3.5" rx="5.5" ry="2"/><path d="M2.5 3.5v9c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2v-9M2.5 8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2"/>',server:'<rect x="2" y="2" width="12" height="5"/><rect x="2" y="9" width="12" height="5"/><path d="M4.5 4.5h1M4.5 11.5h1"/>',code:'<path d="M5 4L1.5 8 5 12M11 4l3.5 4L11 12M9.5 2.5l-3 11"/>',image:'<rect x="1.5" y="2.5" width="13" height="11"/><path d="M1.5 11l4-4 3 3 2-2 4 4"/><circle cx="11" cy="6" r="1.2"/>',cap:'<path d="M8 3L1 6.5 8 10l7-3.5z"/><path d="M4 8v3.5c1 1 2.5 1.5 4 1.5s3-.5 4-1.5V8M15 6.5v4"/>',game:'<rect x="1.5" y="4.5" width="13" height="8" rx="3"/><path d="M4.5 8.5h3M6 7v3"/><circle cx="10.5" cy="7.5" r=".6"/><circle cx="12" cy="9.5" r=".6"/>'};
+const icon=k=>ICONS[k]?'<svg class="ic" viewBox="0 0 16 16" aria-hidden="true">'+ICONS[k]+'</svg>':'';
+const featsHtml=r=>r.feat?'<div class="feats">'+r.feat.map(f=>'<div class="feat">'+icon(f[0])+'<span>'+esc(f[1])+'</span></div>').join('')+'</div>':'';
+const PROJECTS=[
+ {name:'NajavaRadova.rs',kind:'web',feat:[['scrape','Reads utility websites'],['ai','LLM turns notices into data'],['shield','Validation + second-model check'],['pin','Matches exact addresses'],['map','Live outage map'],['bell','Telegram + email alerts'],['box','Docker on Oracle Cloud'],['ci','CI/CD with tests'],['pulse','Monitoring + watchdogs']],type:'Live service',ping:12,status:['live','ok'],
+  summary:'Alerts people in Serbia by Telegram or email when a power, water or heating outage is announced for their exact address. Built and run solo since August 2026.',
+  stack:['Python','Gemini API','Pydantic','SQLite','H3','Docker Compose','GitHub Actions','Cloudflare','Oracle Cloud'],
+  link:['najavaradova.rs',NR],code:NRGH,
+  detail:'<h2>NajavaRadova.rs</h2>'+
+   '<p>Outage notices in Serbia are spread across many utility websites, each in its own format: tables, long posts, Cyrillic and Latin, street lists with house ranges. NajavaRadova.rs reads them, understands them, and tells you only when your address is affected.</p>'+
+   '<div class="pipe"><span>scrape</span><b>→</b><span>split</span><b>→</b><span>LLM read</span><b>→</b><span>resolve streets</span><b>→</b><span>H3 match</span><b>→</b><span>check</span><b>→</b><span>queue</span><b>→</b><span>Telegram / email</span></div>'+
+   '<h3>Reading notices with an LLM</h3><ul>'+
+    '<li>The model fills a strict schema (Pydantic, temperature 0), never free text. On rate limits it falls back through a cascade of models.</li>'+
+    '<li>Deterministic rules handle what models get wrong: unstated times, multi-night notices split per night, one notice split into separate outages by time window.</li>'+
+    '<li>Risky alerts (a whole street or area) are held until a second model agrees, or until I approve them in Telegram.</li>'+
+    '<li>An evaluation harness scores readings against a set of notices I labelled by hand, so prompt and model changes are measured, not guessed. I used it to compare Gemini with open models.</li></ul>'+
+   '<h3>Finding who is affected</h3><ul>'+
+    '<li>Street names are resolved against the state address registry, down to house-number points, with whole-word matching across Cyrillic and Latin.</li>'+
+    '<li>Outage areas and subscriber addresses become H3 hexagons, so "who is affected" is one indexed SQL query, followed by exact checks for side of street and house ranges.</li>'+
+    '<li>A guard drops anything that falls outside the outage\'s municipality.</li></ul>'+
+   '<h3>Running it</h3><ul>'+
+    '<li>Docker Compose services on an Oracle Cloud VM behind Caddy: API, scrapers, Telegram bot, senders and a watchdog.</li>'+
+    '<li>GitHub Actions runs the tests and deploys. A scheduled job rebuilds the public city pages.</li>'+
+    '<li>The map and site are on Cloudflare Pages; the live feed is served from a Cloudflare Worker with KV.</li>'+
+    '<li>Delivery queue with atomic claims, retries with backoff, one message per person, quiet hours, and follow-ups when a notice changes or is cancelled.</li>'+
+    '<li>Magic-link sign-in that stores only token hashes, rate limits, and no subscriber data ever sent to a model.</li></ul>'+
+   '<h3>Things that broke, and what I changed</h3><ul>'+
+    '<li>A utility\'s server kept returning a stale cached page, so new notices never arrived. I added no-cache requests and a watchdog that flags sources whose content stops changing.</li>'+
+    '<li>Matching street names by substring alerted the wrong buildings. I switched to whole-word matching and added tests that replay real notices.</li>'+
+    '<li>A street with the same name in a nearby town put an outage in the wrong place. I capped the search distance and added the municipality guard.</li></ul>'+
+   '<p style="margin-top:14px"><a href="'+NR+'" target="_blank" rel="noopener">Open najavaradova.rs</a> · <a href="'+NRGH+'" target="_blank" rel="noopener">Source code on GitHub</a></p>'},
+ {name:'Tutor automation',kind:'sheet',feat:[['sheet','Tracks payment checks'],['cal','Fills weekly lesson plans']],type:'Kodland',ping:18,status:['in use','ok'],
+  summary:'A Google Sheets and Apps Script tool for fellow Kodland tutors. It tracks incoming payment checks and fills each tutor\'s calendar with that week\'s lesson plan.',
+  stack:['Google Sheets','Apps Script']},
+ {name:'n8n payroll assistant',kind:'flow',feat:[['ai','LLM reads timesheets'],['shield','Validation rules'],['user','Human review of doubtful rows']],type:'Automation',ping:null,status:['in progress','warn'],
+  summary:'An n8n workflow where an LLM reads timesheets into structured data, validation rules check it, and anything doubtful goes to a person before it is saved.',
+  stack:['n8n','LLM API','Google Sheets']},
+ {name:'Highway car detection',kind:'eye',feat:[['db','Dataset preparation'],['eye','Vehicle detection with YOLO']],type:'University',ping:24,status:['2024',''],
+  summary:'Computer vision project at FTN. I prepared the datasets and configured a YOLO model to detect vehicles in highway footage.',
+  stack:['Python','YOLO']},
+ {name:'Flight & hotel booking',kind:'db',feat:[['server','Backend features'],['db','SQL + MongoDB schemas']],type:'University',ping:26,status:['2023–24',''],
+  summary:'Team project at FTN. I built backend features and designed both the relational and the MongoDB schemas.',
+  stack:['SQL','MongoDB']},
+ {name:'Parking spot detection',kind:'cam',feat:[['cam','Reads courtyard cameras'],['web','Shows free spots online']],type:'Planned',ping:null,status:['planned','warn'],
+  summary:'A web app that shows which spots in my building\'s courtyard are free, using the security cameras. Starts once the cameras are installed.',
+  stack:['Computer vision','Web']},
+ {name:'koldan.dev',kind:'code',feat:[['code','Plain HTML, CSS, JS'],['image','Hand-drawn SVG scene'],['user','Keyboard + screen reader']],type:'This site',ping:3,status:['online','ok'],
+  summary:'This page. Plain HTML, CSS and JavaScript, no libraries, hosted on GitHub Pages. The background is drawn in SVG.',
+  stack:['HTML','CSS','JavaScript']}
+];
+
+const EXPERIENCE=[
+ {name:'Founder and developer · NajavaRadova.rs',kind:'web',type:'Aug 2026 –',ping:12,status:['current','ok'],
+  summary:'Designed, built and run a live outage-alert service on my own.',
+  points:['Python scrapers and an LLM pipeline that turn unstructured notices into structured data, with validation rules and a second-model check before any alert is sent','Production on Oracle Cloud with Docker Compose, deployed through GitHub Actions with automated tests','Monitoring that alerts me when a source or the pipeline stops; diagnosed and fixed production incidents'],
+  link:['najavaradova.rs',NR]},
+ {name:'Roblox tutor · Kodland',kind:'game',type:'Nov 2025 –',ping:18,status:['current','ok'],
+  summary:'Teaching programming to young students with Lua in Roblox Studio.',
+  points:['Guide students through structured project curricula, building complete games from scratch','Built a Google Sheets and Apps Script automation that tracks payment checks and updates tutors\' calendars with each week\'s lesson plan']},
+ {name:'Highway car detection · FTN',kind:'eye',type:'Feb–Oct 2024',ping:24,status:['project',''],
+  summary:'Computer vision project with Python and YOLO.',
+  points:['Prepared datasets and configured the model to detect vehicles on highway footage']},
+ {name:'Flight & hotel booking · FTN',kind:'db',type:'Oct 2023 – Jul 2024',ping:26,status:['project',''],
+  summary:'Backend for a booking application.',
+  points:['Built backend features','Designed and managed relational (SQL) and MongoDB schemas']}
+];
+
+const EDUCATION=[
+ {name:'B.Sc. Computing and Control Engineering',kind:'cap',type:'2020 – 2027',ping:8,status:['studying',''],
+  summary:'Faculty of Technical Sciences, University of Novi Sad.',
+  points:['Module: Applied Computer Science and Informatics','Specialisation: Databases']},
+ {name:'Gimnazija „Svetozar Marković“',kind:'cap',type:'2016 – 2020',status:['completed',''],
+  summary:'Grammar school (general secondary education) in Novi Sad.'}
+];
+
+const SKILLS=[
+ {group:'AI and automation',kind:'ai',summary:'Using LLMs in production: structured output, validation and evaluation, plus workflow automation.',items:['LLM APIs','Structured output and validation','LLM evaluation','n8n','Google Apps Script','REST APIs','Telegram Bot API']},
+ {group:'DevOps and cloud',kind:'box',summary:'Running my own service in production: containers, CI/CD, Linux servers and Cloudflare at the edge. Dashed = learning now.',items:['Docker','Docker Compose','GitHub Actions (CI/CD)','Linux, SSH, Bash','Oracle Cloud','Cloudflare (Pages, Workers, KV, R2)'],learn:['Terraform','Grafana']},
+ {group:'Programming',kind:'code',summary:'Python every day; SQL and PL/SQL for databases; C#, C/C++ and Lua from university and teaching.',items:['Python','SQL','PL/SQL','C# (.NET)','C/C++','Lua']},
+ {group:'Data',kind:'db',summary:'SQLite in production, relational and document databases, H3 hexagon indexing for maps.',items:['SQLite','Relational databases','MongoDB','H3 geospatial indexing']},
+ {group:'Spoken',kind:'user',summary:'Serbian is my native language; English at B2.',items:['Serbian (native)','English (B2)']}
+];
+
+/* =========================================================
+   CODE
+   ========================================================= */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const mobile=()=>window.matchMedia('(max-width:860px)').matches;
+const reduce=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+const ext=u=>/^https?:/.test(u)?' target="_blank" rel="noopener"':'';
+
+/* ---------- windows: a stack, like game dialogs ----------
+   Only the top window is usable; close it (x or Esc) to get back to the one below. */
+const stack=[];
+const TAB_OF={'w-projects':'projects','w-exp':'exp','w-edu':'edu','w-skills':'skills'};
+function applyStack(){
+  stack.forEach((id,i)=>{const w=$(id),top=i===stack.length-1;w.style.zIndex=10+i;w.inert=!top;w.classList.toggle('under',!top)});
+  syncMenu()}
+function openWin(id,quiet){
+  if(TAB_OF[id]){showTab(TAB_OF[id]);id='w-browse'}
+  const w=$(id);if(!w)return;
+  if(mobile()){stack.forEach(x=>{if(x!==id){$(x).classList.remove('open');$(x).inert=false}});stack.length=0}
+  const i=stack.indexOf(id);if(i>=0)stack.splice(i,1);
+  stack.push(id);w.classList.add('open');applyStack();
+  if(mobile()&&!quiet)w.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
+  const focusEl=id==='w-console'?$('coi'):w.querySelector('[role=listbox]');
+  if(focusEl&&!quiet)setTimeout(()=>focusEl.focus(),30);
+}
+function closeWin(w){
+  const i=stack.indexOf(w.id);if(i>=0)stack.splice(i,1);
+  w.classList.remove('open','under','max');w.inert=false;applyStack();
+  const t=stack[stack.length-1];if(t&&!mobile()){const f=$(t).querySelector('[role=listbox],.btn,.x');if(f)f.focus()}
+}
+function syncMenu(){document.querySelectorAll('.menu [data-open]').forEach(b=>{const id=b.dataset.open,t=TAB_OF[id];
+  const on=t?$('w-browse').classList.contains('open')&&curTab===t:$(id).classList.contains('open');b.setAttribute('aria-expanded',on?'true':'false')})}
+document.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click',()=>{
+  const id=b.dataset.open,t=TAB_OF[id],top=stack[stack.length-1];
+  const isTop=t?top==='w-browse'&&curTab===t:top===id;
+  if(b.closest('.menu')&&!mobile()&&isTop)closeWin($(t?'w-browse':id));else openWin(id)}));
+document.querySelectorAll('.win').forEach(w=>{
+  w.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeWin(w)));
+  const tb=w.querySelector('.tb'),x=tb.querySelector('.x');
+  if(w.id!=='w-quit'){   /* maximize / restore */
+    const m=document.createElement('button');m.type='button';m.className='x mx';m.textContent='□';m.setAttribute('aria-label','Maximize');
+    const toggle=()=>{const on=w.classList.toggle('max');m.textContent=on?'❒':'□';m.setAttribute('aria-label',on?'Restore':'Maximize')};
+    m.addEventListener('click',toggle);tb.addEventListener('dblclick',e=>{if(!e.target.closest('button')&&!mobile())toggle()});
+    const wrap=document.createElement('span');wrap.className='tbb';x.replaceWith(wrap);wrap.append(m,x)}
+  let drag=false,dx=0,dy=0;
+  tb.addEventListener('pointerdown',e=>{if(mobile()||e.target.closest('button')||w.classList.contains('max'))return;drag=true;const r=w.getBoundingClientRect(),g=$('game').getBoundingClientRect();dx=e.clientX-(r.left-g.left);dy=e.clientY-(r.top-g.top);tb.setPointerCapture(e.pointerId);tb.style.cursor='move'});
+  tb.addEventListener('pointermove',e=>{if(!drag)return;const g=$('game');const nx=Math.max(-w.offsetWidth+80,Math.min(g.clientWidth-80,e.clientX-dx));const ny=Math.max(0,Math.min(g.clientHeight-40,e.clientY-dy));w.style.left=nx+'px';w.style.top=ny+'px'});
+  tb.addEventListener('pointerup',()=>{drag=false;tb.style.cursor=''});
+});
+
+/* ---------- server browsers ---------- */
+const stColor=k=>k==='ok'?'var(--ok)':(k==='warn'?'var(--warn)':'var(--muted)');
+const BROWSERS={
+  projects:{rows:PROJECTS,cols:['Project','Type','Status'],count:'projects-count',sel:0,c2:'104px'},
+  exp:{rows:EXPERIENCE,cols:['Role','When','Status'],count:'exp-count',sel:0,c2:'150px'},
+  edu:{rows:EDUCATION,cols:['Degree','When','Status'],count:'edu-count',sel:0,c2:'110px'},
+  skills:{rows:SKILLS.map(g=>({name:g.group,kind:g.kind,type:g.items.length+' skills',status:g.learn?['+ learning','warn']:['',''],summary:g.summary,stack:g.items,learn:g.learn})),cols:['Area','Count','Status'],count:'skills-count',sel:0,c2:'90px'}
+};
+const TIPS={projects:'Select a project, then Connect for the full write-up.',exp:'Newest first.',edu:'',skills:'Dashed = learning now.'};
+let curTab='projects',filter='';
+function infoHtml(r){
+  const chips=(r.status&&r.status[0]?'<span class="chip '+r.status[1]+'">'+esc(r.status[0])+'</span>':'')+(r.stack||[]).map(s=>'<span class="chip">'+esc(s)+'</span>').join('')+(r.learn||[]).map(s=>'<span class="chip learn" title="learning now">'+esc(s)+'</span>').join('');
+  return '<h3>'+esc(r.name)+'</h3><div class="when">'+esc(r.type)+'</div>'+(chips?'<div class="chips">'+chips+'</div>':'')+'<p>'+esc(r.summary)+'</p>'+(r.feat?'<div class="fh">What it does</div>'+featsHtml(r):'')+
+    (r.points?'<ul class="list">'+r.points.map(p=>'<li>'+esc(p)+'</li>').join('')+'</ul>':'')+
+    (r.link?'<a href="'+esc(r.link[1])+'"'+ext(r.link[1])+'>'+esc(r.link[0])+'</a>':'')+
+    (r.code?' · <a href="'+esc(r.code)+'"'+ext(r.code)+'>Source code</a>':'')}
+function detailHtml(r){
+  const f=r.feat?'<h3>What it does</h3>'+featsHtml(r):'';
+  if(r.detail){const i=r.detail.indexOf('</p>');return i<0?r.detail+f:r.detail.slice(0,i+4)+f+r.detail.slice(i+4)}
+  return '<h2>'+esc(r.name)+'</h2><p>'+esc(r.summary)+'</p>'+f+
+    (r.points?'<ul>'+r.points.map(p=>'<li>'+esc(p)+'</li>').join('')+'</ul>':'')+
+    (r.stack&&r.stack.length?'<h3>Stack</h3><p>'+r.stack.map(esc).join(' · ')+'</p>':'')+
+    (r.link?'<p><a href="'+esc(r.link[1])+'"'+ext(r.link[1])+'>Open '+esc(r.link[0])+'</a></p>':'')}
+function renderBrowser(key){
+  const B=BROWSERS[key],root=document.querySelector('[data-browser="'+key+'"]');root.style.setProperty('--c2',B.c2);
+  root.innerHTML='<div class="sunk"><div class="row head" aria-hidden="true"><span></span><span>'+B.cols[0]+'</span><span class="c-type">'+B.cols[1]+'</span><span>'+B.cols[2]+'</span></div>'+
+    '<div class="listbox" role="listbox" tabindex="0" aria-label="'+esc(B.cols[0])+' list"></div></div><div class="sunk"><div class="info" aria-live="polite"></div></div>';
+  const list=root.querySelector('.listbox'),info=root.querySelector('.info');
+  function draw(){
+    list.innerHTML='';
+    const q=filter.toLowerCase(),hit=r=>!q||[r.name,r.type,r.summary,(r.stack||[]).join(' '),(r.learn||[]).join(' '),(r.feat||[]).map(f=>f[1]).join(' '),(r.points||[]).join(' ')].join(' ').toLowerCase().includes(q);
+    B.vis=B.rows.map((r,i)=>i).filter(i=>hit(B.rows[i]));
+    if(B.vis.length&&!B.vis.includes(B.sel))B.sel=B.vis[0];
+    if(!B.vis.length){info.innerHTML='<p style="color:var(--muted)">Nothing matches “'+esc(filter)+'”.</p>';list.removeAttribute('aria-activedescendant');if(key===curTab)$('browse-count').textContent='· 0 found';return}
+    B.rows.forEach((r,i)=>{if(!B.vis.includes(i))return;const d=document.createElement('div');d.className='row';d.setAttribute('role','option');d.id=key+'-opt-'+i;d.setAttribute('aria-selected',i===B.sel?'true':'false');
+      d.innerHTML='<span class="rk">'+icon(r.kind)+'</span><span>'+esc(r.name)+'</span><span class="c-type">'+esc(r.type)+'</span><span class="st" style="color:'+stColor(r.status[1])+'">'+esc(r.status[0])+'</span>';
+      d.addEventListener('click',()=>{B.sel=i;draw()});d.addEventListener('dblclick',()=>{B.sel=i;draw();connect(key)});list.appendChild(d)});
+    list.setAttribute('aria-activedescendant',key+'-opt-'+B.sel);
+    info.innerHTML=infoHtml(B.rows[B.sel])+'<div><button class="btn" type="button">'+(B.rows[B.sel].detail?'Read the full write-up':'Open details')+'</button></div>';
+    info.querySelector('.btn').addEventListener('click',()=>connect(key));
+  }
+  list.addEventListener('keydown',e=>{const n=B.rows.length;
+    const v=B.vis||[],k=v.indexOf(B.sel);if(!v.length)return;
+    if(e.key==='ArrowDown'){e.preventDefault();B.sel=v[Math.min(v.length-1,k+1)];draw()}
+    if(e.key==='ArrowUp'){e.preventDefault();B.sel=v[Math.max(0,k-1)];draw()}
+    if(e.key==='Enter'){e.preventDefault();connect(key)}});
+  B.draw=()=>{draw();if(key===curTab)$('browse-count').textContent='· '+(B.vis?B.vis.length:B.rows.length)+' found'};B.draw();
+}
+Object.keys(BROWSERS).forEach(renderBrowser);
+const tabs=[...document.querySelectorAll('.tab')];
+function showTab(key,focus){
+  curTab=key;
+  tabs.forEach(t=>{const on=t.dataset.tab===key;t.setAttribute('aria-selected',on?'true':'false');t.tabIndex=on?0:-1;$('pane-'+t.dataset.tab).hidden=!on});
+  $('ftip').textContent=TIPS[key];BROWSERS[key].draw();syncMenu();
+  if(focus)tabs.find(t=>t.dataset.tab===key).focus()}
+tabs.forEach((t,i)=>{t.addEventListener('click',()=>showTab(t.dataset.tab));
+  t.addEventListener('keydown',e=>{const d=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0;if(!d)return;e.preventDefault();showTab(tabs[(i+d+tabs.length)%tabs.length].dataset.tab,true)})});
+$('filt').addEventListener('input',e=>{filter=e.target.value.trim();Object.values(BROWSERS).forEach(B=>B.draw());BROWSERS[curTab].draw()});
+$('bconnect').addEventListener('click',()=>connect(curTab));
+showTab('projects');
+
+/* ---------- connect + message of the day ---------- */
+let busy=false,lastFocus=null;
+function connect(key){const B=BROWSERS[key];if(busy||!B.vis||!B.vis.length)return;busy=true;lastFocus=document.activeElement;const r=B.rows[B.sel];
+  const done=()=>{busy=false;$('cx').classList.remove('on');$('mot').textContent=r.name;$('mob').innerHTML=detailHtml(r);$('mob').scrollTop=0;$('mo').classList.add('on');$('ok').focus()};
+  if(reduce){done();return}
+  $('cxt').textContent='Opening '+r.name;$('cx').classList.add('on');
+  const steps=['Loading...'];let w=0;$('cxb').style.width='0';
+  const iv=setInterval(()=>{w+=25;$('cxb').style.width=w+'%';$('cxs').textContent=steps[Math.min(steps.length-1,Math.floor(w/100*steps.length))];if(w>=100){clearInterval(iv);done()}},40)}
+function closeMotd(){$('mo').classList.remove('on');if(lastFocus&&lastFocus.focus)lastFocus.focus()}
+$('ok').addEventListener('click',closeMotd);
+$('mo').addEventListener('click',e=>{if(e.target===$('mo'))closeMotd()});
+
+/* ---------- skills + contact ---------- */
+$('clist').innerHTML=CONTACT.map(c=>'<div class="cline"><span>'+esc(c.k)+'</span><a href="'+esc(c.u)+'"'+ext(c.u)+'>'+esc(c.v)+'</a><button class="copy" type="button" data-copy="'+esc(c.v)+'" aria-label="Copy '+esc(c.k)+'">Copy</button></div>').join('');
+document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',()=>{const v=b.getAttribute('data-copy');
+  try{navigator.clipboard.writeText(v).then(()=>{b.textContent='Copied';setTimeout(()=>{b.textContent='Copy'},1500)},()=>{b.textContent='Copy failed'})}catch(e){b.textContent='Copy failed'}}));
+(function spray(){const c=$('spray').getContext('2d');const B=['0000000000000000','0011111111100000','0011111111110000','0011000000111000','0011000000011000','0011000000111000','0011111111110000','0011111111100000','0011000000111000','0011000000011100','0011000000001100','0011000000011100','0011111111111000','0011111111110000','0000000000000000','0000000000000000'];
+  c.fillStyle='#958831';c.fillRect(0,0,16,16);c.fillStyle='#14160f';B.forEach((row,y)=>[...row].forEach((v,x)=>{if(v==='1')c.fillRect(x,y,1,1)}))})();
+
+/* photo.jpg next to index.html replaces the pixel logo; without it the logo stays */
+(function(){const ph=$('photo');const show=()=>{ph.hidden=false;$('spray').hidden=true};if(ph.complete&&ph.naturalWidth)show();else ph.addEventListener('load',show)})();
+
+/* ---------- console ---------- */
+const col=$('col');
+function out(s,c){const d=document.createElement('div');d.style.color=c||'var(--text)';d.innerHTML=s;col.appendChild(d);while(col.children.length>16)col.removeChild(col.firstChild)}
+out('koldan.dev console','#ffd24a');out("Type 'help' for commands.",'var(--muted)');
+const OPEN={about:'w-about',projects:'w-projects',experience:'w-exp',education:'w-edu',skills:'w-skills',contact:'w-contact'};
+const CMD={
+  help:()=>out('about · projects · experience · education · skills · contact · cv · najava · clear · quit'),
+  cv:()=>{out('downloading CV...','var(--ok)');const l=document.createElement('a');l.href='Branimir_Koldan_CV.pdf';l.download='';document.body.appendChild(l);l.click();l.remove()},
+  najava:()=>out('NajavaRadova.rs: scrape → LLM read → resolve streets → H3 match → check → Telegram / email. <a href="'+NR+'" target="_blank" rel="noopener">najavaradova.rs</a> · <a href="'+NRGH+'" target="_blank" rel="noopener">source</a>'),
+  clear:()=>{col.innerHTML=''},
+  quit:()=>openWin('w-quit')};
+$('cof').addEventListener('submit',e=>{e.preventDefault();const raw=$('coi').value.trim();$('coi').value='';const v=raw.toLowerCase();
+  if(!v){out('Type a command first. Try help.','var(--bad)');return}out('] '+esc(raw),'var(--muted)');
+  if(OPEN[v]){out('opening '+v+'...','var(--ok)');openWin(OPEN[v]);return}
+  (CMD[v]||(()=>out('Unknown command: '+esc(raw)+'. Try help.','var(--bad)')))()});
+
+/* ---------- quit ---------- */
+$('quitGo').addEventListener('click',()=>{closeWin($('w-quit'));$('bye').classList.add('on');$('reconnect').focus()});
+$('reconnect').addEventListener('click',()=>{$('bye').classList.remove('on');openWin('w-about')});
+
+/* ---------- keyboard ---------- */
+const NUM={'1':'w-about','2':'w-projects','3':'w-exp','4':'w-skills','5':'w-contact'};
+document.addEventListener('keydown',e=>{
+  const typing=e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA');
+  if(e.key==='`'||e.key==='~'){e.preventDefault();const w=$('w-console');if(w.classList.contains('open'))closeWin(w);else openWin('w-console');return}
+  if(e.key==='Escape'){if($('mo').classList.contains('on')){closeMotd();return}if($('bye').classList.contains('on')||$('cx').classList.contains('on'))return;
+    const t=stack[stack.length-1];if(t)closeWin($(t));return}
+  if(typing||e.ctrlKey||e.metaKey||e.altKey||$('mo').classList.contains('on'))return;
+  if(NUM[e.key]){e.preventDefault();openWin(NUM[e.key])}});
+
+/* ---------- start ---------- */
+const startHash={'#projects':'w-projects','#experience':'w-exp','#education':'w-edu','#skills':'w-skills','#contact':'w-contact'}[location.hash];
+openWin('w-about',true);if(startHash)openWin(startHash,true);
+})();
+</script>
+</body>
+</html>
