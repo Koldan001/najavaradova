@@ -14,8 +14,8 @@ addresses by Telegram or email. The same data drives a public outage map and a p
 It has been in production with real users since September 2026. I designed, built and operate it
 alone: application code, infrastructure, CI/CD, monitoring and incident fixes.
 
-This repository is a public snapshot of the private production repo. The street database, the
-address registry extract and all secrets are excluded, so it is meant to be read rather than run.
+> This repository is a public snapshot of the private production repo. The street database, the
+> address registry extract and all secrets are excluded, so it is meant to be read rather than run.
 
 ## Architecture
 
