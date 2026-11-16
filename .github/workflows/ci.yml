@@ -1,0 +1,88 @@
+name: CI/CD
+
+# When this runs:
+#   - push to main            -> run tests, then (if green) deploy to the VM
+#   - pull request into main  -> run tests only, never deploy
+# A push to a feature branch with no PR open gets nothing; open a PR to get CI on it.
+on:
+  push:
+    branches: [main]
+    # The city-pages workflow commits regenerated SEO pages here every few hours. Those are
+    # static content for Cloudflare Pages only - no code changed, nothing to test or redeploy
+    # to the VM. Pages watches the repo itself and still picks them up.
+    paths-ignore:
+      - 'web/grad/**'
+      - 'web/danas/**'
+      - 'web/sitemap.xml'
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. TEST - runs on GitHub's machines, on every push to main and every PR.
+  #    This is the "CI" (Continuous Integration) half: prove the commit isn't
+  #    broken before it can reach the server.
+  # ---------------------------------------------------------------------------
+  test:
+    runs-on: ubuntu-24.04                    # pinned: ubuntu-latest moves to Ubuntu 26 from 19.10.2026
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v5
+
+      - name: Install Python 3.12 (same version the Docker image uses)
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run the test suite
+        # config.py raises at import time if GEMINI_API_KEY is unset, and importing
+        # it is unavoidable for the tests. CI never calls Gemini for real, so a
+        # throwaway placeholder value is all that's needed to get past that check.
+        # Tests that need the big gitignored data/*.db files skip themselves
+        # automatically when those files aren't present (which they never are here).
+        env:
+          GEMINI_API_KEY: ci-placeholder-not-a-real-key
+        run: pytest -v
+
+  # ---------------------------------------------------------------------------
+  # 2. DEPLOY - runs only after `test` passes, and only for a real push to main
+  #    (not for pull requests). This is the "CD" (Continuous Deployment) half:
+  #    SSH into the Oracle VM and run the same update steps you do by hand today.
+  # ---------------------------------------------------------------------------
+  deploy:
+    needs: test
+    # Only the private production repo deploys; this public copy runs tests only.
+    if: github.event_name == 'push' && github.repository == 'Koldan001/outage_notifier'
+    runs-on: ubuntu-24.04
+
+    # Never let two deploys overlap. A second push while one deploy is mid-flight
+    # waits for the first to finish instead of racing it (cancel-in-progress: false).
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+
+    steps:
+      - name: SSH into the VM and run the deploy script
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}          # VM public IP  (GitHub repo secret)
+          username: ${{ secrets.SSH_USER }}      # "ubuntu"       (GitHub repo secret)
+          key: ${{ secrets.SSH_PRIVATE_KEY }}    # deploy private key (GitHub repo secret)
+          command_timeout: 20m                   # a cold `docker compose build` on the small VM is slow
+          script_stop: true                      # stop at the first command that fails
+          script: |
+            set -euo pipefail
+            cd ~/outage_notifier
+            # Bootstrap: sync the code FIRST, so deploy/update.sh itself (and any
+            # change to it) is present before we run it. update.sh then re-runs this
+            # same sync harmlessly (no-op the second time) and does the actual
+            # rebuild + migrate + restart. reset --hard, not merge: the VM mirrors
+            # origin/main exactly, local drift on the box is discarded.
+            git fetch --prune origin
+            git checkout main
+            git reset --hard origin/main
+            bash deploy/update.sh

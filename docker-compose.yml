@@ -1,0 +1,106 @@
+# Cap every container's stdout/stderr log at 3 x 10 MB, oldest rotated out. This is the only
+# retention control on request-level logs: Caddy has no `log` directive and the Python server
+# logs to stderr, so without this the json-file driver would grow unbounded. Also what backs the
+# privacy policy's "tehnički dnevnici se periodično brišu".
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  api:
+    build: .
+    command: python scripts/local_web_server.py
+    logging: *default-logging
+    env_file: .env
+    # No published port here on purpose. This used to publish 80->8000 as a "fallback/debug
+    # path" - which is exactly what caused a real incident: internet scanner/garbage traffic hit
+    # that plain-HTTP port directly (nothing to do with Cloudflare at all) and wedged the server.
+    # Now that Full (strict) is live, Cloudflare only ever talks to the origin over 443, so `api`
+    # doesn't need to be reachable from outside the compose network at all - only `caddy` reaches
+    # it, over the internal docker network (api:8000), which never touches the internet.
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  # Terminates real TLS at the VM (Cloudflare Origin Certificate - see Caddyfile and
+  # deploy/README.md's HTTPS section) instead of the plain-HTTP hop `api`'s port 80 was leaving
+  # between Cloudflare and this VM under "Flexible" SSL/TLS mode.
+  caddy:
+    image: caddy:2-alpine
+    logging: *default-logging
+    ports:
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/etc/caddy/certs:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  bot:
+    build: .
+    command: python -m workers.telegram_bot
+    logging: *default-logging
+    env_file: .env
+    volumes:
+      - ./data:/app/data   # the sqlite DB has to live outside the container, or a rebuild wipes it
+    restart: unless-stopped
+
+  # telegram_worker.py is a one-shot script by design (matches the original cron/systemd-timer
+  # idea, not a long-running process) - this sleep-loop is a stand-in scheduler so it works
+  # inside compose today.
+  sender:
+    build: .
+    command: sh -c "while true; do python -m workers.telegram_worker; sleep 60; done"
+    logging: *default-logging
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  # email_worker.py is the same one-shot-script shape as telegram_worker.py above, same reason -
+  # a separate loop from `sender` so a Brevo outage/slowdown never delays Telegram delivery.
+  email_sender:
+    build: .
+    command: sh -c "while true; do python -m workers.email_worker; sleep 60; done"
+    logging: *default-logging
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  # The orchestrator: runs all 16 scrapers, isolated per-scraper (see main.py). Same sleep-loop
+  # pattern as `sender` above - `sender` picks up whatever this queues within its own next 60s
+  # cycle, so the two are decoupled on purpose (a slow scrape run never delays sending outages
+  # another scraper already queued).
+  #
+  # 15 min, not the original 5 - confirmed for real: even without the naissus/vikkg/vikzr bugs
+  # (still unaudited, see PLAN.md), 16 real Serbian utility sites on a 5-min cycle maxed out
+  # Gemini's free-tier daily quota (both models) in about 6 hours of actual operation. 15 min
+  # cuts that same load 3x; still frequent enough that "up to 15 min stale" is a non-issue for
+  # outage notices that are relevant for hours to days, not real-time.
+  scrapers:
+    build: .
+    command: sh -c "while true; do python main.py; sleep 900; done"
+    logging: *default-logging
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  # Operator watchdog - DMs the operator (OPERATOR_CHAT_ID) when the pipeline heartbeat goes
+  # stale, a scraper failed, the send queue is stuck, or the nightly R2 backup is old. Own loop
+  # so it keeps checking even if `scrapers` is the thing that's down. See workers/watchdog.py.
+  watchdog:
+    build: .
+    command: python -m workers.watchdog
+    logging: *default-logging
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+# config.py raises at import time if GEMINI_API_KEY is unset - true even for services like `bot`
+# that never call Gemini at all, so .env needs it filled in regardless of which service you run.

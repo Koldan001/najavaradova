@@ -1,0 +1,10 @@
+[Unit]
+Description=Backup outage_notifier.db to Cloudflare R2
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/outage_notifier
+ExecStart=/bin/bash /home/ubuntu/outage_notifier/deploy/backup_to_r2.sh

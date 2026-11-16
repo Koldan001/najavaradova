@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<script>try{var m=document.cookie.match(/(?:^|; )theme=([^;]*)/);var t=m?decodeURIComponent(m[1]):null;if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<title>Politika povraćaja sredstava — NajavaRadova.rs</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23101013'/%3E%3Crect x='27' y='13' width='10' height='27' rx='5' fill='%23F2F0EE'/%3E%3Ccircle cx='32' cy='48' r='6' fill='%235FAEE3'/%3E%3C/svg%3E">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #101013; --panel-border: #24242A; --hair: #1E1E23;
+    --text: #F2F0EE; --dim: #A5A1AB; --mute: #8C8892;
+    --link: #7FA9F5; --link-hi: #B3CBFA; --voda: #5FAEE3;
+    --sel-bg: #17171B; --warn-text: #E8A896;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) { color-scheme: light; }
+    :root:not([data-theme="dark"]) {
+      --bg: #EFEBE2; --panel-border: #DCD4C3; --hair: #E2DBC9;
+      --text: #2A2620; --dim: #6E6858; --mute: #8B8471;
+      --link: #3763B0; --link-hi: #2A4F8C; --sel-bg: #E6DFCE; --warn-text: #A8442B;
+    }
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #EFEBE2; --panel-border: #DCD4C3; --hair: #E2DBC9;
+    --text: #2A2620; --dim: #6E6858; --mute: #8B8471;
+    --link: #3763B0; --link-hi: #2A4F8C; --sel-bg: #E6DFCE; --warn-text: #A8442B;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .theme-toggle {
+    display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 20px;
+    background: var(--sel-bg); border: 1px solid var(--panel-border); margin-left: auto;
+  }
+  .theme-toggle button {
+    all: unset; width: 26px; height: 24px; display: flex; align-items: center; justify-content: center;
+    border-radius: 16px; font-size: 12.5px; line-height: 1; cursor: pointer; color: var(--mute);
+  }
+  .theme-toggle button.on { background: var(--bg); color: var(--text); }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; line-height: 1.6;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { color: var(--link-hi); }
+  header {
+    display: flex; align-items: center; gap: 10px;
+    height: 56px; padding: 0 clamp(18px, 3vw, 32px);
+    border-bottom: 1px solid var(--panel-border);
+  }
+  header .name { font-size: 17px; font-weight: 700; letter-spacing: -.02em; }
+  header .name .tld { color: var(--mute); font-weight: 400; }
+  main {
+    max-width: 680px; margin: 0 auto;
+    padding: clamp(32px, 6vw, 56px) clamp(20px, 4vw, 32px) 80px;
+  }
+  h1 { font-size: clamp(26px, 4vw, 32px); font-weight: 700; letter-spacing: -.03em; margin-bottom: 6px; }
+  .updated { font-size: 13.5px; color: var(--mute); margin-bottom: 36px; }
+  h2 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; margin: 32px 0 10px; }
+  p, li { font-size: 15px; color: var(--dim); margin-bottom: 10px; }
+  ul { padding-left: 20px; margin-bottom: 10px; }
+  strong { color: var(--text); font-weight: 600; }
+  .warn {
+    margin: 20px 0; padding: 14px 16px; border-radius: 10px;
+    background: rgba(224,132,104,.09); border: 1px solid rgba(224,132,104,.28);
+    font-size: 14px; color: var(--warn-text);
+  }
+  footer {
+    display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between; align-items: center;
+    padding: 26px clamp(20px, 3vw, 32px);
+    border-top: 1px solid var(--panel-border);
+    color: var(--mute); font-size: 13.5px;
+  }
+  footer nav { display: flex; gap: 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <svg width="22" height="22" viewBox="0 0 64 64" aria-hidden="true">
+    <rect width="64" height="64" rx="14" fill="#101013"/>
+    <rect x="27" y="13" width="10" height="27" rx="5" fill="#F2F0EE"/>
+    <circle cx="32" cy="48" r="6" fill="#5FAEE3"/>
+  </svg>
+  <a href="/" class="name">NajavaRadova<span class="tld">.rs</span></a>
+  <div class="theme-toggle" id="themeToggle" role="group" aria-label="Izgled stranice">
+    <button type="button" data-theme-choice="system" title="Sistem" aria-label="Sistem">🖥</button>
+    <button type="button" data-theme-choice="dark" title="Tamna tema" aria-label="Tamna tema">🌙</button>
+    <button type="button" data-theme-choice="light" title="Svetla tema" aria-label="Svetla tema">☀️</button>
+  </div>
+</header>
+
+<main>
+  <h1>Politika povraćaja sredstava</h1>
+  <p class="updated">Nacrt — stupa na snagu kad krene naplata. Poslednja izmena: 7. septembar 2026.</p>
+
+  <div class="warn">
+    Servis je trenutno u potpunosti besplatan i ne postoji nijedan plaćeni plan. Ova politika je
+    pripremljena unapred i primenjuje se tek kad, i ako, plaćeni planovi budu uvedeni — uz
+    prethodno obaveštenje i link sa stranice za plaćanje.
+  </div>
+
+  <h2>Na šta se odnosi</h2>
+  <p>
+    Na plaćene pretplate za servis NajavaRadova.rs. Naplatu i obradu plaćanja vrši
+    <strong>Lemon Squeezy</strong> kao ovlašćeni prodavac (Merchant of Record); on je i strana
+    koja tehnički izvršava povraćaj na tvoje sredstvo plaćanja.
+  </p>
+
+  <h2>Pravo na odustanak (14 dana)</h2>
+  <p>
+    Kao potrošač imaš pravo da odustaneš od ugovora u roku od 14 dana od kupovine, bez navođenja
+    razloga, u skladu sa Zakonom o zaštiti potrošača — <strong>osim</strong> ako si pri kupovini
+    izričito zatražio/la da usluga počne odmah i potvrdio/la da time gubiš pravo na odustanak
+    nakon što je usluga u celosti izvršena.
+  </p>
+  <ul>
+    <li><strong>U roku od 14 dana</strong>, ako servis nisi suštinski koristio/la (nije bilo
+      isporučenih obaveštenja na tvoju adresu) — pun povraćaj.</li>
+    <li><strong>U roku od 14 dana</strong>, ako je servis već radio za tvoju adresu — povraćaj
+      umanjen za srazmeran deo za iskorišćene dane.</li>
+    <li><strong>Posle 14 dana</strong> — tekući plaćeni period se ne refundira; otkazivanjem se
+      samo zaustavlja sledeće obnavljanje, a servis radi do kraja plaćenog perioda.</li>
+  </ul>
+
+  <h2>Prekid na našoj strani</h2>
+  <p>
+    Ako servis zbog greške ili kvara na našoj strani ne radi duže vreme (npr. duži prekid
+    prikupljanja ili slanja obaveštenja), imaš pravo na srazmeran povraćaj ili produženje
+    pretplate za odgovarajući broj dana.
+  </p>
+
+  <h2>Šta ne podleže povraćaju</h2>
+  <ul>
+    <li>Propušteno ili zakasnelo obaveštenje koje je posledica netačne ili nepravovremene
+      zvanične objave komunalnog preduzeća, ili greške u automatskoj obradi — servis se pruža
+      „takav kakav jeste" (vidi <a href="/terms">Uslove korišćenja</a>).</li>
+    <li>Pretplata prijavljena na tuđu ili netačnu adresu.</li>
+    <li>Zloupotreba servisa suprotno Uslovima korišćenja.</li>
+  </ul>
+
+  <h2>Kako da zatražiš povraćaj</h2>
+  <p>
+    Pošalji zahtev na <a href="mailto:obavestenja@najavaradova.rs">obavestenja@najavaradova.rs</a>
+    sa email adresom naloga i brojem porudžbine. Odgovaramo u roku od 14 dana; odobreni povraćaj
+    Lemon Squeezy vraća na isto sredstvo plaćanja, obično u roku od 5–10 radnih dana.
+  </p>
+</main>
+
+<footer>
+  <span>NajavaRadova.rs &mdash; nezavisan servis, nije povezan sa komunalnim preduzećima · Autor i održavanje: <a href="https://koldan.dev">Branimir Koldan</a></span>
+  <nav>
+    <a href="/">Mapa</a>
+    <a href="/privacy">Politika privatnosti</a>
+    <a href="/terms">Uslovi korišćenja</a>
+    <a href="mailto:obavestenja@najavaradova.rs">Kontakt</a>
+  </nav>
+</footer>
+
+<script>
+// Same three-state toggle as web/index.html - see that file's comment. Same cookie
+// ("domain=najavaradova.rs"), so a choice made here, on the main site, or on the dashboard
+// (app.najavaradova.rs) stays in sync everywhere.
+(function () {
+  var THEME_COOKIE = "theme";
+  var THEME_COOKIE_DOMAIN = "najavaradova.rs";
+  function storedTheme() {
+    try {
+      var m = document.cookie.match(/(?:^|; )theme=([^;]*)/);
+      var t = m ? decodeURIComponent(m[1]) : null;
+      return (t === "light" || t === "dark") ? t : null;
+    } catch (e) { return null; }
+  }
+  function updateUI() {
+    var choice = storedTheme() || "system";
+    var btns = document.querySelectorAll("#themeToggle button");
+    for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("on", btns[i].dataset.themeChoice === choice);
+  }
+  function setTheme(choice) {
+    try {
+      var attrs = "; domain=" + THEME_COOKIE_DOMAIN + "; path=/; samesite=lax; secure";
+      if (choice === "system") document.cookie = THEME_COOKIE + "=; max-age=0" + attrs;
+      else document.cookie = THEME_COOKIE + "=" + encodeURIComponent(choice) + "; max-age=31536000" + attrs;
+    } catch (e) {}
+    if (choice === "system") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", choice);
+    updateUI();
+  }
+  var btns = document.querySelectorAll("#themeToggle button");
+  for (var i = 0; i < btns.length; i++) btns[i].onclick = function () { setTheme(this.dataset.themeChoice); };
+  updateUI();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var m=document.cookie.match(/(?:^|; )theme=([^;]*)/);var t=m?decodeURIComponent(m[1]):null;if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<title>Nestalo je struje ili vode: šta da radim — NajavaRadova.rs</title>
+<meta name="description" content="Šta da proveriš kad nestane struje, vode ili grejanja: da li je isključenje najavljeno, da li je kvar, kome se prijavljuje i koliko traje.">
+<link rel="canonical" href="https://najavaradova.rs/vodic/nestalo-struje-ili-vode/">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #101013; --panel-border: #24242A; --hair: #1E1E23;
+    --text: #F2F0EE; --dim: #A5A1AB; --mute: #8C8892;
+    --link: #7FA9F5; --link-hi: #B3CBFA; --voda: #5FAEE3;
+    --sel-bg: #17171B;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) { color-scheme: light; }
+    :root:not([data-theme="dark"]) {
+      --bg: #EFEBE2; --panel-border: #DCD4C3; --hair: #E2DBC9;
+      --text: #2A2620; --dim: #6E6858; --mute: #8B8471;
+      --link: #3763B0; --link-hi: #2A4F8C; --sel-bg: #E6DFCE;
+    }
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #EFEBE2; --panel-border: #DCD4C3; --hair: #E2DBC9;
+    --text: #2A2620; --dim: #6E6858; --mute: #8B8471;
+    --link: #3763B0; --link-hi: #2A4F8C; --sel-bg: #E6DFCE;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .theme-toggle {
+    display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 20px;
+    background: var(--sel-bg); border: 1px solid var(--panel-border); margin-left: auto;
+  }
+  .theme-toggle button {
+    all: unset; width: 26px; height: 24px; display: flex; align-items: center; justify-content: center;
+    border-radius: 16px; font-size: 12.5px; line-height: 1; cursor: pointer; color: var(--mute);
+  }
+  .theme-toggle button.on { background: var(--bg); color: var(--text); }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; line-height: 1.6;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { color: var(--link-hi); }
+  header {
+    display: flex; align-items: center; gap: 10px;
+    height: 56px; padding: 0 clamp(18px, 3vw, 32px);
+    border-bottom: 1px solid var(--panel-border);
+  }
+  header .name { font-size: 17px; font-weight: 700; letter-spacing: -.02em; }
+  header .name .tld { color: var(--mute); font-weight: 400; }
+  main {
+    max-width: 680px; margin: 0 auto;
+    padding: clamp(32px, 6vw, 56px) clamp(20px, 4vw, 32px) 80px;
+  }
+  h1 { font-size: clamp(26px, 4vw, 32px); font-weight: 700; letter-spacing: -.03em; margin-bottom: 6px; }
+  .updated { font-size: 13.5px; color: var(--mute); margin-bottom: 36px; }
+  h2 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; margin: 32px 0 10px; }
+  p, li { font-size: 15px; color: var(--dim); margin-bottom: 10px; }
+  ul { padding-left: 20px; margin-bottom: 10px; }
+  strong { color: var(--text); font-weight: 600; }
+  footer {
+    display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between; align-items: center;
+    padding: 26px clamp(20px, 3vw, 32px);
+    border-top: 1px solid var(--panel-border);
+    color: var(--mute); font-size: 13.5px;
+  }
+  footer nav { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+  footer nav a { white-space: nowrap; }
+  h3 { font-size: 15.5px; font-weight: 600; color: var(--text); margin: 22px 0 6px; }
+</style>
+<link rel="stylesheet" href="/signup.css">
+<style>.answer { font-size: 16px; color: var(--text); border-left: 3px solid var(--voda); padding: 4px 0 4px 14px; margin: 8px 0 28px; }</style>
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Kako da proverim da li je isključenje najavljeno?", "acceptedAnswer": {"@type": "Answer", "text": "Otvori stranicu svog grada : na njoj su najave za danas, sutra i prekosutra, sa ulicama, vremenom i linkom na zvaničnu objavu. Isto vidiš i na mapi . Detaljno: kako se proverava struja i kako se proverava voda ."}}, {"@type": "Question", "name": "Kako da znam da li je kvar samo kod mene?", "acceptedAnswer": {"@type": "Answer", "text": "Pitaj komšije ili pogledaj da li u zgradi radi osvetljenje i lift. Ako struje nema samo u tvom stanu, proveri osigurače. Ako vode nema samo kod tebe, proveri ventil i bojler. Ako nema ni kod drugih, a ništa nije najavljeno, verovatno je kvar na mreži."}}, {"@type": "Question", "name": "Kome da prijavim kvar?", "acceptedAnswer": {"@type": "Answer", "text": "Struja : kontakt centru Elektrodistribucije Srbije (broj je na sajtu elektrodistribucija.rs). Voda : dežurnoj službi vodovoda tvog grada (broj je na sajtu vodovoda). Grejanje : toplani tvog grada. NajavaRadova.rs nije komunalno preduzeće i ne prima prijave kvarova."}}, {"@type": "Question", "name": "Koliko traje isključenje?", "acceptedAnswer": {"@type": "Answer", "text": "Kod planiranog isključenja vreme je u najavi, najčešće nekoliko sati preko dana. Radovi se ponekad produže, pa računaj na malo duže. Kod kvara vreme se unapred ne zna: ekipa ga procenjuje na terenu, a preduzeća ponekad objave novo stanje."}}, {"@type": "Question", "name": "Kako da ubuduće znam unapred?", "acceptedAnswer": {"@type": "Answer", "text": "Prijavi adresu na NajavaRadova.rs. Kad EPS, vodovod ili toplana objave isključenje za tvoju ulicu i broj, poruka ti stiže na Telegram ili e-mail. Besplatno je."}}]}
+</script>
+</head>
+<body>
+
+<header>
+  <svg width="22" height="22" viewBox="0 0 64 64" aria-hidden="true">
+    <rect width="64" height="64" rx="14" fill="#101013"/>
+    <rect x="27" y="13" width="10" height="27" rx="5" fill="#F2F0EE"/>
+    <circle cx="32" cy="48" r="6" fill="#5FAEE3"/>
+  </svg>
+  <a href="/" class="name">NajavaRadova<span class="tld">.rs</span></a>
+  <div class="theme-toggle" id="themeToggle" role="group" aria-label="Izgled stranice">
+    <button type="button" data-theme-choice="system" title="Sistem" aria-label="Sistem">🖥</button>
+    <button type="button" data-theme-choice="dark" title="Tamna tema" aria-label="Tamna tema">🌙</button>
+    <button type="button" data-theme-choice="light" title="Svetla tema" aria-label="Svetla tema">☀️</button>
+  </div>
+</header>
+
+<main>
+  <h1>Nestalo je struje ili vode: šta da radim</h1>
+  <p class="answer">Prvo proveri da li je isključenje najavljeno: na stranici svog grada na NajavaRadova.rs ili na sajtu EPS-a, vodovoda ili toplane. Ako je najavljeno, tamo piše i do kad traje. Ako nije, a nemaju ni komšije, verovatno je kvar i prijavljuje se preduzeću: struja EPS Distribuciji, voda vodovodu, grejanje toplani.</p>
+  <h2>Kako da proverim da li je isključenje najavljeno?</h2>
+  <p>Otvori <a href="/grad/">stranicu svog grada</a>: na njoj su najave za danas, sutra i prekosutra, sa ulicama, vremenom i linkom na zvaničnu objavu. Isto vidiš i na <a href="/">mapi</a>. Detaljno: <a href="/vodic/iskljucenja-struje/">kako se proverava struja</a> i <a href="/vodic/iskljucenja-vode/">kako se proverava voda</a>.</p>
+  <h2>Kako da znam da li je kvar samo kod mene?</h2>
+  <p>Pitaj komšije ili pogledaj da li u zgradi radi osvetljenje i lift. Ako struje nema samo u tvom stanu, proveri osigurače. Ako vode nema samo kod tebe, proveri ventil i bojler. Ako nema ni kod drugih, a ništa nije najavljeno, verovatno je kvar na mreži.</p>
+  <h2>Kome da prijavim kvar?</h2>
+  <ul><li><strong>Struja</strong>: kontakt centru Elektrodistribucije Srbije (broj je na sajtu elektrodistribucija.rs).</li><li><strong>Voda</strong>: dežurnoj službi vodovoda tvog grada (broj je na sajtu vodovoda).</li><li><strong>Grejanje</strong>: toplani tvog grada.</li></ul><p>NajavaRadova.rs nije komunalno preduzeće i ne prima prijave kvarova.</p>
+  <h2>Koliko traje isključenje?</h2>
+  <p>Kod planiranog isključenja vreme je u najavi, najčešće nekoliko sati preko dana. Radovi se ponekad produže, pa računaj na malo duže. Kod kvara vreme se unapred ne zna: ekipa ga procenjuje na terenu, a preduzeća ponekad objave novo stanje.</p>
+  <h2>Kako da ubuduće znam unapred?</h2>
+  <p><a href="/?prijava=1" data-signup>Prijavi adresu</a> na NajavaRadova.rs. Kad EPS, vodovod ili toplana objave isključenje za tvoju ulicu i broj, poruka ti stiže na Telegram ili e-mail. Besplatno je.</p>
+  <h2>Još</h2>
+  <p><a href="/vodic/iskljucenja-struje/">Kako da proverim da li je najavljeno isključenje struje</a> · <a href="/vodic/iskljucenja-vode/">Kako da proverim da li je najavljeno isključenje vode</a> · <a href="/faq">Česta pitanja</a> · <a href="/grad/">Svi gradovi</a></p>
+</main>
+
+<footer>
+  <span>NajavaRadova.rs &mdash; nezavisan servis, nije povezan sa komunalnim preduzećima · Autor i održavanje: <a href="https://koldan.dev">Branimir Koldan</a></span>
+  <nav>
+    <a href="/">Mapa</a>
+    <a href="/vodic/iskljucenja-struje/">Vodiči</a>
+    <a href="/privacy">Politika privatnosti</a>
+    <a href="/terms">Uslovi korišćenja</a>
+    <a href="mailto:obavestenja@najavaradova.rs">Kontakt</a>
+  </nav>
+</footer>
+
+<script>
+// Same three-state toggle as web/index.html - see that file's comment. Same cookie
+// ("domain=najavaradova.rs"), so a choice made here, on the main site, or on the dashboard
+// (app.najavaradova.rs) stays in sync everywhere.
+(function () {
+  var THEME_COOKIE = "theme";
+  var THEME_COOKIE_DOMAIN = "najavaradova.rs";
+  function storedTheme() {
+    try {
+      var m = document.cookie.match(/(?:^|; )theme=([^;]*)/);
+      var t = m ? decodeURIComponent(m[1]) : null;
+      return (t === "light" || t === "dark") ? t : null;
+    } catch (e) { return null; }
+  }
+  function updateUI() {
+    var choice = storedTheme() || "system";
+    var btns = document.querySelectorAll("#themeToggle button");
+    for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("on", btns[i].dataset.themeChoice === choice);
+  }
+  function setTheme(choice) {
+    try {
+      var attrs = "; domain=" + THEME_COOKIE_DOMAIN + "; path=/; samesite=lax; secure";
+      if (choice === "system") document.cookie = THEME_COOKIE + "=; max-age=0" + attrs;
+      else document.cookie = THEME_COOKIE + "=" + encodeURIComponent(choice) + "; max-age=31536000" + attrs;
+    } catch (e) {}
+    if (choice === "system") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", choice);
+    updateUI();
+  }
+  var btns = document.querySelectorAll("#themeToggle button");
+  for (var i = 0; i < btns.length; i++) btns[i].onclick = function () { setTheme(this.dataset.themeChoice); };
+  updateUI();
+})();
+</script>
+<script src="/signup.js" defer></script>
+<script>
+// Where the visitor came from (a site's name only) and this page's name, carried in the link
+// to the signup form on the home page (?src=, ?from=) - read there once, with the signup, and
+// never stored on the device. Set on a real click only, so crawlers see the plain links.
+(function () {
+  var page = "vodic-nestalo-struje-ili-vode", src = "";
+  try {
+    var q = new URLSearchParams(location.search);
+    var host = document.referrer ? new URL(document.referrer).hostname : "";
+    src = q.get("src") || q.get("utm_source") || (host !== location.hostname ? host : "");
+  } catch (err) {}
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest("a[href^='/']");
+    if (!a) return;
+    // "Prijavi adresu" opens the signup form right here (web/signup.js), with this page's place
+    // names and where the visitor came from. Until that script has loaded, or if it fails, the
+    // link still works: it opens the same form on the home page.
+    if (a.hasAttribute("data-signup") && window.NRSignup) {
+      try {
+        var grad = new URL(a.getAttribute("href"), location.href).searchParams.get("grad") || "";
+        window.NRSignup.open({ grad: grad.split("|"), source: { src: src, from: page } });
+        e.preventDefault();
+        return;
+      } catch (err) {}
+    }
+    try {
+      var u = new URL(a.getAttribute("href"), location.href);
+      if (src) u.searchParams.set("src", src);
+      if (u.pathname === "/" && page) u.searchParams.set("from", page);
+      a.setAttribute("href", u.pathname + u.search + u.hash);
+    } catch (err) {}
+  });
+})();
+</script>
+</body>
+</html>

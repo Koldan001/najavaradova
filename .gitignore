@@ -1,0 +1,47 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Databases & Dynamic Local Storage
+data/*.db
+data/*.db-shm
+data/*.db-wal
+# Snapshots made by hand and by deploy/restore_from_r2.sh - never belong in git
+data/*.bak-*
+data/*.pre-restore-*
+data/*.sqlite3
+data/*.sqlite
+data/*.geojson
+data/*.csv
+data/*.pbf
+data/*.geojsonseq
+data/map.html
+data/rgz_raw/
+cache/
+viber_session/
+
+# OS & Editor Artifacts
+.DS_Store
+*.Zone.Identifier
+.vscode/
+.idea/
+
+# Environment Variables & Secrets
+.env
+deploy/backup.env
+certs/
+
+# Generated front-page data (built from the DB by scripts/build_web_data.py)
+web/outages.json
+# Personal notes and Claude files (kept locally, not in the repo)
+CLAUDE.md
+PLAN.md
+PROJECT_OVERVIEW.md
+.claude/skills/

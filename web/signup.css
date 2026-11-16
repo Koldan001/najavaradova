@@ -1,0 +1,140 @@
+/* The signup window (web/signup.js), shared by the home page and the city pages. Moved here
+   unchanged from web/index.html (2026-10-08). Its colours are the home page's theme tokens; a
+   city page has none, so signup.js marks the window .nr-own-theme and the same values come from
+   below. */
+#modalOverlay.nr-own-theme {
+  --bg: #101013; --text: #F2F0EE; --dim: #A5A1AB; --mute: #8C8892;
+  --sel-bg: #17171B; --card-bg: #1B1B20; --border2: #2B2B31; --ctrl-bg: #1E1E23;
+  --border-strong: #4a4a54; --btn-hover: #fff; --err-text: #E8A896;
+  --tint-sm: rgba(255,255,255,.06); --tint-md: rgba(255,255,255,.07); --tint-xl: rgba(255,255,255,.10);
+  --lockscrim: rgba(16,16,19,.4); --ease: cubic-bezier(.22,.61,.36,1);
+  color: var(--text); line-height: 1.5;
+}
+@media (prefers-color-scheme: light) {
+  #modalOverlay.nr-own-theme {
+    --bg: #EFEBE2; --text: #2A2620; --dim: #6E6858; --mute: #8B8471;
+    --sel-bg: #E6DFCE; --card-bg: #FAF7F0; --border2: #DCD4C3; --ctrl-bg: #ECE5D5;
+    --border-strong: #B9AD8F; --btn-hover: #3d372c; --err-text: #A8442B;
+    --tint-sm: rgba(0,0,0,.05); --tint-md: rgba(0,0,0,.06); --tint-xl: rgba(0,0,0,.08);
+    --lockscrim: rgba(247,244,237,.55);
+  }
+}
+/* The home page resets every element's margins and keeps [hidden] hidden; a city page doesn't.
+   :where() keeps these at zero specificity, so every rule below still wins. */
+:where(#modalOverlay, #modalOverlay *) { margin: 0; padding: 0; box-sizing: border-box; }
+#modalOverlay[hidden], #modalOverlay [hidden] { display: none !important; }
+
+/* prijava modal */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(8,8,10,.68); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal {
+  position: relative; width: 100%; max-width: 420px;
+  background: var(--card-bg); border: 1px solid var(--border2); border-radius: 16px;
+  padding: 28px 26px 26px; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  animation: modalIn .25s var(--ease) both;
+  /* Confirmed real gap: with none of this, a short viewport (landscape phone, or the
+     on-screen keyboard eating half the screen) centers the modal past both edges with no way
+     to scroll down to the submit button - fields above the fold are unreachable, not just
+     ugly. max-height leaves the overlay's own 20px padding on both sides. */
+  max-height: calc(100vh - 40px); overflow-y: auto;
+}
+@keyframes modalIn { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+.modal-close {
+  position: absolute; top: 14px; right: 14px;
+  width: 30px; height: 30px; border-radius: 8px;
+  background: transparent; border: none; color: var(--mute);
+  font-size: 20px; line-height: 1; cursor: pointer;
+}
+.modal-close:hover { background: var(--tint-sm); color: var(--text); }
+.modal h3 { font-size: 20px; letter-spacing: -.02em; margin-bottom: 6px; }
+.modal-sub { font-size: 14px; color: var(--dim); margin-bottom: 20px; line-height: 1.45; }
+.field { margin-bottom: 14px; position: relative; }
+.field label { display: block; font-size: 13px; font-weight: 600; color: var(--dim); margin-bottom: 6px; }
+.field input, .field select {
+  width: 100%; padding: 10px 12px; border-radius: 8px;
+  background: var(--sel-bg); border: 1px solid var(--border2); color: var(--text);
+  font-family: inherit;
+  /* 16px, not 15px - iOS Safari auto-zooms the whole page on focus for any input under 16px.
+     Confirmed documented behavior, not cosmetic - every tap into this form on an iPhone would
+     have zoomed the layout in and left the visitor to pinch back out. */
+  font-size: 16px;
+}
+.field input:focus, .field select:focus { outline: none; border-color: var(--border-strong); }
+.field input[disabled], .field select[disabled] { opacity: .5; }
+.field-hint { margin-top: 5px; font-size: 12.5px; color: var(--mute); }
+.suggest-list {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 10;
+  margin-top: 4px; max-height: 190px; overflow-y: auto;
+  background: var(--ctrl-bg); border: 1px solid var(--border2); border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.4);
+}
+.suggest-item { padding: 9px 12px; font-size: 14.5px; cursor: pointer; }
+.suggest-item:hover, .suggest-item.hi { background: var(--tint-md); }
+.suggest-item .sub { color: var(--mute); font-size: 12.5px; margin-left: 6px; }
+.channel-toggle { display: flex; gap: 8px; }
+.chan {
+  flex: 1; padding: 10px; border-radius: 8px;
+  background: var(--sel-bg); border: 1px solid var(--border2); color: var(--dim);
+  font-family: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer;
+  transition: background .15s var(--ease), color .15s var(--ease), border-color .15s var(--ease);
+}
+.chan.on { background: var(--tint-xl); color: var(--text); border-color: var(--border-strong); }
+.modal-error {
+  margin-bottom: 14px; padding: 10px 12px; border-radius: 8px;
+  background: rgba(224,132,104,.09); border: 1px solid rgba(224,132,104,.28);
+  font-size: 13.5px; color: var(--err-text);
+}
+.modal-submit {
+  width: 100%; padding: 13px; border-radius: 10px;
+  background: var(--text); color: var(--bg); border: none;
+  font-family: inherit; font-size: 15.5px; font-weight: 600; cursor: pointer;
+  transition: background .18s var(--ease);
+}
+.modal-submit:hover { background: var(--btn-hover); }
+.modal-submit[disabled] { opacity: .6; cursor: default; }
+/* Plain-language recap above the submit button, shown only once every field is valid. */
+.reg-summary {
+  margin-bottom: 12px; padding: 11px 13px; border-radius: 9px;
+  background: rgba(111,208,155,.08); border: 1px solid rgba(111,208,155,.24);
+  font-size: 13px; color: var(--dim); line-height: 1.5;
+}
+.reg-summary b { color: var(--text); font-weight: 600; }
+.modal-success { text-align: center; padding: 10px 0 0; }
+.modal-success-icon { font-size: 34px; margin-bottom: 10px; }
+#modalSuccessText { font-size: 15px; color: var(--dim); line-height: 1.5; margin-bottom: 14px; }
+.modal-saved-addr { margin-top: 10px; }
+.modal-saved-addr b { color: var(--text); font-weight: 600; }
+.modal-saved-note { margin-top: 6px; font-size: 13px; }
+.modal-hint {
+  margin-bottom: 14px; padding: 10px 12px; border-radius: 9px; text-align: left;
+  background: rgba(127,169,245,.08); border: 1px solid rgba(127,169,245,.24);
+  font-size: 13px; color: var(--dim); line-height: 1.5;
+}
+.modal-hint b { color: var(--text); font-weight: 600; }
+.modal-mail-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 14px; }
+.modal-mail-btn {
+  font: inherit; font-size: 14px; font-weight: 500; color: var(--text); background: transparent;
+  border: 1px solid var(--border-strong, rgba(127,127,127,.4)); border-radius: 9px; padding: 9px 14px;
+  text-decoration: none; cursor: pointer;
+}
+.modal-mail-btn[hidden] { display: none; }
+.modal-mail-btn:disabled { opacity: .55; cursor: default; }
+
+/* registration lock — see REGISTRATION_DISABLED */
+.modal-form-wrap { position: relative; }
+.modal-form-wrap.locked .modal-sub,
+.modal-form-wrap.locked form {
+  filter: blur(5px); pointer-events: none; user-select: none;
+}
+.modal-lock-overlay {
+  position: absolute; inset: -4px; z-index: 2; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; gap: 8px;
+  padding: 24px; border-radius: 14px; background: var(--lockscrim);
+}
+.modal-lock-overlay .icon { font-size: 28px; }
+.modal-lock-overlay h4 { font-size: 16.5px; margin: 0; letter-spacing: -.01em; }
+.modal-lock-overlay p { font-size: 13px; color: var(--dim); margin: 0; max-width: 260px; line-height: 1.45; }

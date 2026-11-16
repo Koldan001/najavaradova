@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Same cookie as web/index.html - "domain=najavaradova.rs" makes it visible here too even
+     though this is app.najavaradova.rs, a different origin. Real complaint fixed: picking a
+     theme on the main site and having the dashboard ignore it. -->
+<script>try{var m=document.cookie.match(/(?:^|; )theme=([^;]*)/);var t=m?decodeURIComponent(m[1]):null;if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<title>Moja stranica — NajavaRadova.rs</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23101013'/%3E%3Crect x='27' y='13' width='10' height='27' rx='5' fill='%23F2F0EE'/%3E%3Ccircle cx='32' cy='48' r='6' fill='%235FAEE3'/%3E%3C/svg%3E">
+<style>
+  /* Same palette as web/index.html's :root - kept in sync by hand, not shared, since this page
+     lives in a separate directory (app/, not web/ - see local_web_server.py's comment on why).
+     The light-theme block below is the same hand-sync situation - same light values as
+     web/index.html, copied rather than shared, and a separate localStorage key/toggle since this
+     is a different origin (app.najavaradova.rs) that can't read the main site's storage anyway. */
+  :root {
+    color-scheme: dark;
+    --bg: #101013; --panel-border: #24242A; --hair: #1E1E23; --text: #F2F0EE;
+    --dim: #A5A1AB; --mute: #8C8892; --link: #7FA9F5; --link-hi: #B3CBFA;
+    --voda: #5FAEE3; --struja: #E0B05C; --live: #6FD09B; --danger: #E08468;
+    --sel-bg: #17171B; --ease: cubic-bezier(.22,.61,.36,1);
+    --card-bg: #1B1B20; --border2: #2B2B31;
+    --ctrl-bg: #1E1E23; --ctrl-hover: #26262C;
+    --border-strong: #4a4a54; --border-strong-2: #3a3a42;
+    --err-text: #E8A896; --ok-text: #B7E9CC; --btn-hover: #fff;
+    --tint-sm: rgba(255,255,255,.06); --tint-md: rgba(255,255,255,.07); --tint-xl: rgba(255,255,255,.10);
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) { color-scheme: light; }
+    :root:not([data-theme="dark"]) {
+      --bg: #EFEBE2; --panel-border: #DCD4C3; --hair: #E2DBC9; --text: #2A2620;
+      --dim: #6E6858; --mute: #8B8471; --link: #3763B0; --link-hi: #2A4F8C;
+      --live: #237A54; --danger: #A8442B;
+      --sel-bg: #E6DFCE;
+      --card-bg: #FAF7F0; --border2: #DCD4C3;
+      --ctrl-bg: #ECE5D5; --ctrl-hover: #DED5C0;
+      --border-strong: #B9AD8F; --border-strong-2: #B9AD8F;
+      --err-text: #A8442B; --ok-text: #1F7A50; --btn-hover: #3d372c;
+      --tint-sm: rgba(0,0,0,.05); --tint-md: rgba(0,0,0,.06); --tint-xl: rgba(0,0,0,.08);
+    }
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #EFEBE2; --panel-border: #DCD4C3; --hair: #E2DBC9; --text: #2A2620;
+    --dim: #6E6858; --mute: #8B8471; --link: #3763B0; --link-hi: #2A4F8C;
+    --live: #237A54; --danger: #A8442B;
+    --sel-bg: #E6DFCE;
+    --card-bg: #FAF7F0; --border2: #DCD4C3;
+    --ctrl-bg: #ECE5D5; --ctrl-hover: #DED5C0;
+    --border-strong: #B9AD8F; --border-strong-2: #B9AD8F;
+    --err-text: #A8442B; --ok-text: #1F7A50; --btn-hover: #3d372c;
+    --tint-sm: rgba(0,0,0,.05); --tint-md: rgba(0,0,0,.06); --tint-xl: rgba(0,0,0,.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; line-height: 1.5;
+    min-height: 100vh;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { color: var(--link-hi); }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 16px clamp(18px, 3vw, 32px); border-bottom: 1px solid var(--panel-border);
+  }
+  /* An <a>, not a <div> - clicking the logo/wordmark goes back to the main site (the map),
+     same convention as clicking a site's logo anywhere else. ".name" wraps BOTH text pieces as
+     one flex item (matching web/index.html's own .brand markup) - without it, "NajavaRadova"
+     and the ".tld" span become two separate flex children and the container's own gap (meant
+     for the icon-to-wordmark spacing) wrongly inserts itself between them too, splitting the
+     word visually - confirmed real bug from a screenshot showing exactly that. */
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 16px; font-weight: 700; letter-spacing: -.02em; color: var(--text);
+  }
+  .brand:hover { color: var(--text); }
+  .brand .tld { color: var(--link); font-weight: 400; }
+  /* Same bordered-pill language as .btn.ghost (see "Odjavi se" below) instead of a bare text
+     link floating alone in the corner - one visual system for every button-shaped action on
+     the page, not two different ones sitting side by side. */
+  header .back {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 999px;
+    background: var(--ctrl-bg); border: 1px solid var(--border2);
+    font-size: 13.5px; font-weight: 600; color: var(--text);
+    transition: background .18s var(--ease), border-color .18s var(--ease);
+  }
+  header .back:hover { background: var(--ctrl-hover); border-color: var(--border-strong-2); color: var(--text); }
+  /* On a phone the full label broke onto two lines and the pill turned into a lopsided blob. */
+  header .back { white-space: nowrap; }
+  header .back-short { display: none; }
+  @media (max-width: 440px) { header .back-long { display: none; } header .back-short { display: inline; } }
+  /* Sistem / tamna / svetla toggle - same markup and behaviour as web/index.html's, see the
+     comment there for why it's three icon buttons in a pill rather than a single switch. */
+  .theme-toggle {
+    display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 20px;
+    background: var(--sel-bg); border: 1px solid var(--panel-border);
+  }
+  .theme-toggle button {
+    all: unset; width: 26px; height: 24px; display: flex; align-items: center; justify-content: center;
+    border-radius: 16px; font-size: 12.5px; line-height: 1; cursor: pointer; color: var(--mute);
+  }
+  .theme-toggle button.on { background: var(--bg); color: var(--text); }
+
+  main { max-width: 640px; margin: 0 auto; padding: clamp(28px, 5vw, 56px) clamp(18px, 4vw, 24px) 80px; }
+
+  .card {
+    background: var(--card-bg); border: 1px solid var(--border2); border-radius: 16px;
+    padding: 26px 24px; margin-bottom: 18px;
+  }
+  h1 { font-size: clamp(22px, 3vw, 27px); letter-spacing: -.03em; margin-bottom: 8px; }
+  .lede { font-size: 14.5px; color: var(--dim); line-height: 1.5; margin-bottom: 20px; }
+
+  .field { margin-bottom: 14px; position: relative; }
+  .field label { display: block; font-size: 13px; font-weight: 600; color: var(--dim); margin-bottom: 6px; }
+  .field input, .field select {
+    width: 100%; padding: 10px 12px; border-radius: 8px;
+    background: var(--sel-bg); border: 1px solid var(--border2); color: var(--text);
+    font-family: inherit; font-size: 16px;
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--border-strong); }
+  .field-hint { margin-top: 5px; font-size: 12.5px; color: var(--mute); }
+  .suggest-list {
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 10; margin-top: 4px;
+    max-height: 190px; overflow-y: auto; background: var(--ctrl-bg); border: 1px solid var(--border2);
+    border-radius: 8px; box-shadow: 0 10px 24px rgba(0,0,0,.4);
+  }
+  .suggest-item { padding: 9px 12px; font-size: 14.5px; cursor: pointer; }
+  .suggest-item:hover, .suggest-item.hi { background: var(--tint-md); }
+  .suggest-item .sub { color: var(--mute); font-size: 12.5px; margin-left: 6px; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 11px 18px; border-radius: 10px; border: none; cursor: pointer;
+    font-family: inherit; font-size: 14.5px; font-weight: 600; text-decoration: none;
+    background: var(--text); color: var(--bg);
+    transition: background .18s var(--ease), transform .18s var(--ease);
+  }
+  .btn:hover { background: var(--btn-hover); transform: translateY(-1px); }
+  .btn:disabled { opacity: .55; cursor: default; transform: none; }
+  .btn.ghost { background: var(--ctrl-bg); border: 1px solid var(--border2); color: var(--text); }
+  .btn.ghost:hover { background: var(--ctrl-hover); }
+  .btn.danger { background: rgba(224,132,104,.14); border: 1px solid rgba(224,132,104,.35); color: var(--err-text); }
+  .btn.danger:hover { background: rgba(224,132,104,.22); }
+  .btn.block { width: 100%; }
+  .btn.small { padding: 7px 12px; font-size: 13px; }
+
+  .msg { padding: 12px 14px; border-radius: 10px; font-size: 13.5px; line-height: 1.5; margin-bottom: 16px; }
+  .msg.ok { background: rgba(111,208,155,.1); border: 1px solid rgba(111,208,155,.3); color: var(--ok-text); }
+  .msg.err { background: rgba(224,132,104,.09); border: 1px solid rgba(224,132,104,.28); color: var(--err-text); }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .topbar .who { font-size: 14.5px; color: var(--dim); }
+  .topbar .who b { color: var(--text); }
+  .topbar .actions { display: flex; gap: 8px; }
+
+  /* One address = one collapsed row (pause it, or open it). Everything rarer - which channel
+     goes where, muting one of them, deleting the address - lives inside the expander, so a
+     manager with 15 addresses sees 15 compact rows instead of 15 four-line blocks. */
+  .target { border-bottom: 1px solid var(--hair); }
+  .target:last-child { border-bottom: none; }
+  .trow { display: flex; align-items: center; gap: 12px; padding: 14px 0; cursor: pointer; }
+  .chev {
+    flex: none; width: 18px; height: 18px; padding: 0; background: none; border: none;
+    color: var(--mute); cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: transform .18s var(--ease);
+  }
+  .target.open .chev { transform: rotate(90deg); }
+  .trow .addr { flex: 1; min-width: 0; }
+  .trow .addr .line1 { font-size: 15.5px; font-weight: 600; letter-spacing: -.01em; }
+  .trow .addr .line2 {
+    font-size: 12.5px; color: var(--mute); margin-top: 3px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .trow .addr .line2 .paid { color: var(--live); }
+  .target.off .addr .line1, .target.off .addr .line2 { opacity: .5; }
+  /* Paused addresses look almost identical to active ones once the text is just dimmed - and
+     the per-channel toggles inside stay green, which reads as "still on". Spell it out. */
+  .pausednote {
+    margin: 0 0 12px; padding: 9px 12px; border-radius: 8px;
+    background: rgba(224,132,104,.10); border: 1px solid rgba(224,132,104,.30);
+    font-size: 12.5px; color: var(--err-text); line-height: 1.45;
+  }
+  .chrow .cmuted { flex: none; font-size: 12px; color: var(--danger); font-style: italic; }
+  /* While the address is paused its channel switches are greyed out and locked, but keep their
+     own on/off, which is what comes back when the address is switched on again. */
+  .target.off .chrow.chan { opacity: .45; }
+  .toggle input:disabled + .track { cursor: not-allowed; }
+
+  .tdetail { padding: 0 0 14px 30px; }
+  .chrow { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 13.5px; }
+  .chrow .cname { flex: none; width: 72px; color: var(--dim); font-weight: 600; }
+  .chrow .cdest { flex: 1; min-width: 0; color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chrow .cdest.none { font-style: italic; opacity: .8; }
+  .connectbtn {
+    flex: none; background: var(--ctrl-bg); border: 1px solid var(--border2); color: var(--link);
+    font-family: inherit; font-size: 12.5px; font-weight: 600; padding: 5px 11px;
+    border-radius: 8px; cursor: pointer;
+  }
+  .connectbtn:hover { background: var(--ctrl-hover); color: var(--link-hi); }
+  .chrow.histrow .cdest b { color: var(--text); font-weight: 600; }
+  /* The 90-day total above the list: one big number and what it counts, nothing else. */
+  .histsum {
+    display: flex; align-items: center; gap: 14px; margin: -6px 0 10px;
+    padding: 14px 16px; border-radius: 12px; background: var(--sel-bg); border: 1px solid var(--border2);
+  }
+  .histsum .hnum { font-size: 30px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+  .histsum .hlab { font-size: 14px; font-weight: 600; line-height: 1.35; }
+  .histsum .hlab small { display: block; font-size: 12.5px; font-weight: 400; color: var(--mute); }
+  .tdetail .sep { height: 1px; background: var(--hair); margin: 8px 0 2px; }
+  .dellink {
+    background: none; border: none; padding: 7px 0 0; font-family: inherit;
+    font-size: 13px; font-weight: 600; color: var(--danger); cursor: pointer;
+  }
+  .dellink:hover { text-decoration: underline; }
+
+  .toggle { position: relative; flex: none; width: 42px; height: 24px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle .track {
+    position: absolute; inset: 0; background: var(--border2); border-radius: 999px; cursor: pointer;
+    transition: background .18s var(--ease);
+  }
+  .toggle .track::before {
+    content: ""; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px;
+    border-radius: 50%; background: var(--mute); transition: transform .18s var(--ease), background .18s var(--ease);
+  }
+  .toggle input:checked + .track { background: rgba(111,208,155,.25); }
+  .toggle input:checked + .track::before { transform: translateX(18px); background: var(--live); }
+  .toggle.sm { width: 34px; height: 20px; }
+  .toggle.sm .track::before { width: 14px; height: 14px; }
+  .toggle.sm input:checked + .track::before { transform: translateX(14px); }
+
+  .empty { font-size: 14px; color: var(--mute); padding: 8px 0 4px; }
+
+  .pending {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 13px 14px; border-radius: 10px; background: rgba(127,169,245,.08);
+    border: 1px solid rgba(127,169,245,.25); margin-bottom: 10px; font-size: 13.5px;
+  }
+  .pending .pactions { display: flex; align-items: center; gap: 8px; flex: none; }
+  .pcancel {
+    background: none; border: none; cursor: pointer; color: var(--mute);
+    font-family: inherit; font-size: 19px; line-height: 1; padding: 2px 6px; border-radius: 6px;
+  }
+  .pcancel:hover { color: var(--text); background: var(--tint-sm); }
+
+  /* A new address waiting for Telegram's Start: the one thing left to do, so it gets the room. */
+  .onboard {
+    padding: 22px 22px 16px; border-radius: 16px; margin-bottom: 14px;
+    background: rgba(42,171,238,.08); border: 1.5px solid rgba(42,171,238,.45);
+  }
+  .onboard.done { background: rgba(111,208,155,.10); border-color: rgba(111,208,155,.5); padding-bottom: 20px; }
+  .ob-title { font-size: 19px; font-weight: 750; letter-spacing: -.01em; margin-bottom: 8px; }
+  .onboard.done .ob-title { color: var(--live); }
+  .ob-addr { font-size: 14.5px; font-weight: 600; margin-bottom: 12px; }
+  .ob-wait { display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 999px; font-size: 12px;
+    font-weight: 600; color: var(--struja); background: rgba(224,176,92,.14); white-space: nowrap; }
+  .ob-steps { margin: 0 0 16px 20px; padding: 0; font-size: 14.5px; line-height: 1.75; color: var(--dim); }
+  .ob-steps b { color: var(--text); }
+  .ob-note { font-size: 14px; color: var(--dim); }
+  .btn.tg { background: #2AABEE; color: #fff; font-size: 16px; padding: 14px 18px; }
+  .btn.tg:hover { background: #229ED9; }
+  .ob-alt { display: block; margin: 12px auto 0; background: none; border: none; cursor: pointer;
+    font-family: inherit; font-size: 13.5px; color: var(--dim); padding: 6px; }
+  .ob-alt u { color: var(--link); text-underline-offset: 3px; }
+  .ob-alt:disabled { opacity: .6; cursor: default; }
+
+  .addform { border-top: 1px solid var(--hair); margin-top: 18px; padding-top: 18px; }
+  .addform summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--link); list-style: none; }
+  .addform summary::-webkit-details-marker { display: none; }
+  .channel-toggle { display: flex; gap: 8px; }
+  .chan {
+    flex: 1; padding: 10px; border-radius: 8px; background: var(--sel-bg); border: 1px solid var(--border2);
+    color: var(--dim); font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .chan.on { background: var(--tint-xl); color: var(--text); border-color: var(--border-strong); }
+
+  .danger-zone { margin-top: 8px; }
+  .danger-zone p { font-size: 13px; color: var(--mute); margin-bottom: 12px; line-height: 1.5; }
+
+  .confirm-overlay {
+    position: fixed; inset: 0; z-index: 1000; background: rgba(8,8,10,.68); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .confirm-box {
+    width: 100%; max-width: 380px; background: var(--card-bg); border: 1px solid var(--border2);
+    border-radius: 16px; padding: 26px 24px; text-align: center;
+  }
+  .confirm-box h4 { font-size: 17px; margin-bottom: 10px; }
+  .confirm-box p { font-size: 14px; color: var(--dim); line-height: 1.5; margin-bottom: 20px; }
+  .confirm-box .row { display: flex; gap: 10px; }
+  .confirm-box .row .btn { flex: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="https://najavaradova.rs" aria-label="Nazad na mapu">
+    <svg width="22" height="22" viewBox="0 0 64 64" aria-hidden="true">
+      <rect width="64" height="64" rx="14" fill="#101013"/>
+      <rect x="27" y="13" width="10" height="27" rx="5" fill="#F2F0EE"/>
+      <circle cx="32" cy="48" r="6" fill="#5FAEE3"/>
+    </svg>
+    <span class="name">NajavaRadova<span class="tld">.rs</span></span>
+  </a>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div class="theme-toggle" id="themeToggle" role="group" aria-label="Izgled stranice">
+      <button type="button" data-theme-choice="system" title="Sistem" aria-label="Sistem">🖥</button>
+      <button type="button" data-theme-choice="dark" title="Tamna tema" aria-label="Tamna tema">🌙</button>
+      <button type="button" data-theme-choice="light" title="Svetla tema" aria-label="Svetla tema">☀️</button>
+    </div>
+    <a class="back" href="https://najavaradova.rs">&larr; <span class="back-long">Nazad na sajt</span><span class="back-short">Sajt</span></a>
+  </div>
+</header>
+
+<main id="main">
+  <!-- filled in by JS: either the login card or the logged-in dashboard -->
+</main>
+
+<script>
+/* ---------- theme (sistem / tamna / svetla) ---------- */
+// Same three-state contract as web/index.html's toggle (see its comment), and the same cookie
+// (not localStorage) - "domain=najavaradova.rs" makes a choice made here, or on the main site,
+// visible on both. No basemap to swap here (this page has no map).
+(function () {
+  var THEME_COOKIE = "theme";
+  var THEME_COOKIE_DOMAIN = "najavaradova.rs";
+  function storedTheme() {
+    try {
+      var m = document.cookie.match(/(?:^|; )theme=([^;]*)/);
+      var t = m ? decodeURIComponent(m[1]) : null;
+      return (t === "light" || t === "dark") ? t : null;
+    } catch (e) { return null; }
+  }
+  function updateUI() {
+    var choice = storedTheme() || "system";
+    var btns = document.querySelectorAll("#themeToggle button");
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle("on", btns[i].dataset.themeChoice === choice);
+    }
+  }
+  function setTheme(choice) {
+    try {
+      var attrs = "; domain=" + THEME_COOKIE_DOMAIN + "; path=/; samesite=lax; secure";
+      if (choice === "system") document.cookie = THEME_COOKIE + "=; max-age=0" + attrs;
+      else document.cookie = THEME_COOKIE + "=" + encodeURIComponent(choice) + "; max-age=31536000" + attrs;
+    } catch (e) {}
+    if (choice === "system") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", choice);
+    updateUI();
+  }
+  var btns = document.querySelectorAll("#themeToggle button");
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].onclick = function () { setTheme(this.dataset.themeChoice); };
+  }
+  updateUI();
+})();
+
+var API_BASE = "";   // this page IS the API origin (app.najavaradova.rs) - same-origin always.
+var EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+var KIND_LABEL = { full: "Puna pokrivenost", partial: "Samo struja (EPS)" };
+
+function el(tag, cls, html) {
+  var e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (html != null) e.innerHTML = html;
+  return e;
+}
+function esc(s) {
+  // Single quotes included: markup below interpolates esc() output into single-quoted
+  // attributes (class='...', id='...', href='...'), so ' must be entity-encoded too.
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+// "BEOGRAD (NOVI BEOGRAD)" -> "Beograd (Novi Beograd)". The letter after "(" must not be
+// swallowed together with the space before it: this page saved "Beograd (novi Beograd)" until
+// 27.10.2026 (web/signup.js had the same fix already).
+function titleCase(s) {
+  return (s || "").toLowerCase().replace(/(^|[\s(])([^\s(])/g, function (m, before, c) { return before + c.toUpperCase(); });
+}
+
+/* ---------- fold() - same diacritic/Cyrillic-insensitive matching as web/index.html ---------- */
+var _CYR = {"а":"a","б":"b","в":"v","г":"g","д":"d","ђ":"dj","е":"e","ж":"z","з":"z","и":"i","ј":"j","к":"k","л":"l","љ":"lj","м":"m","н":"n","њ":"nj","о":"o","п":"p","р":"r","с":"s","т":"t","ћ":"c","у":"u","ф":"f","х":"h","ц":"c","ч":"c","џ":"dz","ш":"s"};
+var _LAT = {"č":"c","ć":"c","ž":"z","š":"s","đ":"dj"};
+function fold(s) {
+  s = (s || "").toLowerCase();
+  var out = "";
+  for (var i = 0; i < s.length; i++) { var ch = s[i]; out += _CYR[ch] || _LAT[ch] || ch; }
+  return out;
+}
+// prefix of the name or of any word in it; also a word right after "(" so "novi beograd"
+// / "zemun" finds "Beograd (Novi Beograd)".
+function nameMatches(foldedName, foldedQ) {
+  return foldedName.indexOf(foldedQ) === 0
+      || foldedName.indexOf(" " + foldedQ) !== -1
+      || foldedName.indexOf("(" + foldedQ) !== -1;
+}
+
+function wireSuggest(input, listEl, fetchItems, renderItem, onPick) {
+  var timer = null;
+  input.addEventListener("input", function () {
+    onPick(null);
+    var q = input.value.trim();
+    clearTimeout(timer);
+    if (q.length < 1) { listEl.hidden = true; return; }
+    timer = setTimeout(function () {
+      fetchItems(q).then(function (items) {
+        listEl.innerHTML = "";
+        if (!items.length) { listEl.hidden = true; return; }
+        items.forEach(function (item) {
+          var row = document.createElement("div");
+          row.className = "suggest-item";
+          row.innerHTML = renderItem(item);
+          row.onclick = function () { onPick(item); listEl.hidden = true; };
+          listEl.appendChild(row);
+        });
+        listEl.hidden = false;
+      });
+    }, 200);
+  });
+  input.addEventListener("blur", function () { setTimeout(function () { listEl.hidden = true; }, 150); });
+}
+
+function validBrojClient(v) {
+  var b = (v || "").trim().toUpperCase();
+  if (b === "BB") return true;
+  return /^\d{1,4}\p{L}?$/u.test(b);
+}
+
+/* ---------- render: logged out ---------- */
+
+function renderLoggedOut(notice) {
+  var main = document.getElementById("main");
+  main.innerHTML = "";
+  var card = el("div", "card");
+  card.innerHTML =
+    "<h1>Prijavi se</h1>" +
+    "<p class='lede'>Unesi mejl kojim si se prijavio/la - pošaljemo ti link, bez lozinke.</p>" +
+    "<div id='loginMsg'></div>" +
+    "<form id='loginForm'>" +
+      "<div class='field'><label for='fLoginEmail'>Email adresa</label>" +
+      "<input type='email' id='fLoginEmail' placeholder='ti@example.com' required></div>" +
+      "<button type='submit' class='btn block' id='loginSubmit'>Pošalji link</button>" +
+    "</form>";
+  main.appendChild(card);
+
+  if (notice) {
+    var m = el("div", "msg ok", esc(notice));
+    document.getElementById("loginMsg").appendChild(m);
+  }
+
+  document.getElementById("loginForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var email = document.getElementById("fLoginEmail").value.trim();
+    var btn = document.getElementById("loginSubmit");
+    var msgBox = document.getElementById("loginMsg");
+    msgBox.innerHTML = "";
+    if (!EMAIL_RE.test(email)) {
+      msgBox.appendChild(el("div", "msg err", "Neispravna email adresa."));
+      return;
+    }
+    btn.disabled = true; btn.textContent = "Šaljem…";
+    fetch(API_BASE + "/auth/login", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: email })
+    }).then(function (r) { return r.json(); }).then(function () {
+      btn.disabled = false; btn.textContent = "Pošalji link";
+      msgBox.innerHTML = "";
+      msgBox.appendChild(el("div", "msg ok",
+        "Poslali smo ti link na " + esc(email) + " - proveri mejl (i spam folder)."));
+      document.getElementById("loginForm").hidden = true;
+    }).catch(function () {
+      btn.disabled = false; btn.textContent = "Pošalji link";
+      msgBox.innerHTML = "";
+      msgBox.appendChild(el("div", "msg err", "Server nije dostupan, pokušaj ponovo."));
+    });
+  });
+}
+
+/* ---------- render: logged in ---------- */
+
+// Which address rows are expanded, kept across a targeted refresh so acting on one channel
+// doesn't collapse every other row you had open.
+var EXPANDED = {};
+
+function channelSummary(t) {
+  var names = [];
+  if (t.has_telegram) names.push("Telegram");
+  if (t.has_email) names.push("Email");
+  return names.length ? names.join(" + ") : "bez kanala";
+}
+
+// history_90d / history_hours from /api/me: the outages of the last 90 days that the alert rules
+// would have sent to this address, from before it was registered too - so a new address already
+// shows what the service does at that spot. One number, one rule: a count of messages actually
+// sent is deliberately not shown next to it, since it would still include alerts the matching
+// has since been fixed not to send. Absent if the server couldn't compute them; then neither the
+// total nor the per-address row is drawn.
+function outageWord(n) {
+  return (n % 10 === 1 && n % 100 !== 11) ? "isključenje" : "isključenja";
+}
+
+// Inside an opened address, in the same label + value shape as the Telegram / Email rows below it.
+function outageHistoryRow(t) {
+  if (typeof t.history_90d !== "number") return null;
+  var c = t.history_90d, h = t.history_hours || 0;
+  var row = el("div", "chrow histrow");
+  row.innerHTML = "<span class='cname'>90 dana</span><span class='cdest'>" +
+    (c === 0 ? "bez isključenja"
+      : "<b>" + c + " " + outageWord(c) + "</b>" + (h > 0 ? " · oko " + h + " h" : "")) +
+    "</span>";
+  return row;
+}
+
+// Above the list: one number for all addresses together.
+function historySummaryRow(me) {
+  var have = me.targets.filter(function (t) { return typeof t.history_90d === "number"; });
+  if (!have.length) return null;
+  var total = have.reduce(function (s, t) { return s + t.history_90d; }, 0);
+  var box = el("div", "histsum");
+  box.innerHTML = "<span class='hnum'>" + total + "</span><span class='hlab'>" + outageWord(total) +
+    (me.targets.length === 1 ? " na tvojoj adresi" : " na tvojim adresama") +
+    "<small>u poslednjih 90 dana</small></span>";
+  return box;
+}
+
+function channelDetailRow(t, kind) {
+  var has = kind === "telegram" ? t.has_telegram : t.has_email;
+  var on = kind === "telegram" ? t.telegram_active : t.email_active;
+  var label = kind === "telegram" ? "Telegram" : "Email";
+  var row = el("div", has ? "chrow chan" : "chrow");
+  if (!has) {
+    row.innerHTML =
+      "<span class='cname'>" + label + "</span>" +
+      "<span class='cdest none'>nije povezan</span>" +
+      "<button type='button' class='connectbtn' data-addchan='" + kind + "'>" +
+        (kind === "telegram" ? "Poveži" : "Dodaj") + "</button>";
+    return row;
+  }
+  // Show WHERE each notification actually goes - until now nothing on this page said which
+  // Telegram account or which address a given row would reach.
+  var dest = kind === "telegram"
+    ? (t.telegram_username ? "@" + t.telegram_username : "povezan nalog")
+    : (t.email || "");
+  row.innerHTML =
+    "<span class='cname'>" + label + "</span>" +
+    "<span class='cdest'>" + esc(dest) + "</span>" +
+    (on ? "" : "<span class='cmuted'>isključeno</span>") +
+    "<label class='toggle sm'>" +
+      "<input type='checkbox' data-chch='" + kind + "'" + (on ? " checked" : "") +
+        (t.is_active ? "" : " disabled") + ">" +
+      "<span class='track'></span>" +
+    "</label>";
+  return row;
+}
+
+// Keep a channel row's "isključeno" tag in step with its switch, without a full re-render.
+function syncMuted(cb) {
+  var chrow = cb.closest(".chrow");
+  var muted = chrow.querySelector(".cmuted");
+  if (cb.checked && muted) {
+    muted.remove();
+  } else if (!cb.checked && !muted) {
+    var m = document.createElement("span");
+    m.className = "cmuted";
+    m.textContent = "isključeno";
+    chrow.insertBefore(m, chrow.querySelector(".toggle"));
+  }
+}
+
+function targetRow(t) {
+  var row = el("div", "target" + (t.is_active ? "" : " off") + (EXPANDED[t.id] ? " open" : ""));
+
+  var plan = t.paid_until
+    ? "<span class='paid'>Plaćeno do " + esc(t.paid_until) + "</span>"
+    : "Besplatno";
+  var head = el("div", "trow");
+  head.innerHTML =
+    "<button type='button' class='chev' aria-label='Detalji adrese'>" +
+      "<svg width='7' height='11' viewBox='0 0 7 11' fill='none' aria-hidden='true'>" +
+      "<path d='M1 1l4.5 4.5L1 10' stroke='currentColor' stroke-width='1.6' " +
+      "stroke-linecap='round' stroke-linejoin='round'/></svg>" +
+    "</button>" +
+    "<div class='addr'>" +
+      "<div class='line1'>" + esc(titleCase(t.ulica)) + " " + esc(t.broj) + "</div>" +
+      "<div class='line2'>" + esc(titleCase(t.city)) + " · " + esc(channelSummary(t)) +
+        " · " + plan + "</div>" +
+    "</div>" +
+    "<label class='toggle'>" +
+      "<input type='checkbox' " + (t.is_active ? "checked" : "") + ">" +
+      "<span class='track'></span>" +
+    "</label>";
+  row.appendChild(head);
+
+  // Shown between the collapsed row and the expander (so it's visible without opening the row)
+  // whenever the address is paused - a dimmed line1/line2 alone doesn't read as "off".
+  var pausedNote = el("div", "pausednote",
+    "Pauzirano — ne šaljemo obaveštenja za ovu adresu dok ne uključiš prekidač gore desno.");
+  pausedNote.hidden = !!t.is_active;
+  row.appendChild(pausedNote);
+
+  var detail = el("div", "tdetail");
+  detail.hidden = !EXPANDED[t.id];
+  var hist = outageHistoryRow(t);
+  if (hist) detail.appendChild(hist);
+  detail.appendChild(channelDetailRow(t, "telegram"));
+  detail.appendChild(channelDetailRow(t, "email"));
+  detail.appendChild(el("div", "sep"));
+  var del = el("button", "dellink", "Obriši ovu adresu");
+  del.type = "button";
+  detail.appendChild(del);
+  row.appendChild(detail);
+
+  // Expand/collapse on the row itself - except the master switch, which must not also open it.
+  head.addEventListener("click", function (e) {
+    if (e.target.closest(".toggle")) return;
+    var open = row.classList.toggle("open");
+    detail.hidden = !open;
+    if (open) EXPANDED[t.id] = true; else delete EXPANDED[t.id];
+  });
+
+  // Master switch = pause/resume the whole address. Patched in place and reverted on failure -
+  // never a full re-render, which is what used to collapse an open "Dodaj adresu" mid-typing.
+  var master = head.querySelector("input");
+  master.addEventListener("change", function () {
+    master.disabled = true;
+    fetch(API_BASE + "/api/targets/toggle", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: t.id })
+    }).then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
+      .then(function (res) {
+        master.disabled = false;
+        if (!res) { master.checked = !master.checked; return; }
+        t.is_active = res.is_active ? 1 : 0;
+        master.checked = !!t.is_active;
+        row.classList.toggle("off", !t.is_active);
+        pausedNote.hidden = !!t.is_active;
+        // Each channel keeps its own on/off through a pause; the server only turns them back on
+        // when every one was off (see _api_toggle_target). Show what it actually stored.
+        t.email_active = res.email_active ? 1 : 0;
+        t.telegram_active = res.telegram_active ? 1 : 0;
+        Array.prototype.forEach.call(detail.querySelectorAll("[data-chch]"), function (cb) {
+          var on = cb.dataset.chch === "email" ? t.email_active : t.telegram_active;
+          cb.checked = !!on;
+          cb.disabled = !t.is_active;
+          syncMuted(cb);
+        });
+      });
+  });
+
+  Array.prototype.forEach.call(detail.querySelectorAll("[data-chch]"), function (cb) {
+    cb.addEventListener("change", function () {
+      cb.disabled = true;
+      fetch(API_BASE + "/api/targets/toggle-channel", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: t.id, channel: cb.dataset.chch })
+      }).then(function (r) { return r.ok; }, function () { return false; })
+        .then(function (ok) {
+          cb.disabled = !t.is_active;
+          if (!ok) { cb.checked = !cb.checked; return; }
+          if (cb.dataset.chch === "email") t.email_active = cb.checked ? 1 : 0;
+          else t.telegram_active = cb.checked ? 1 : 0;
+          syncMuted(cb);
+        });
+    });
+  });
+
+  Array.prototype.forEach.call(detail.querySelectorAll("[data-addchan]"), function (btn) {
+    var kind = btn.dataset.addchan, label = btn.textContent;
+    btn.addEventListener("click", function () {
+      // Telegram connecting should land the user IN Telegram, not leave another banner behind.
+      // The tab has to be opened synchronously here, inside the click, or the popup blocker
+      // kills it by the time the fetch resolves - we just point it at the link once we have it.
+      var tab = kind === "telegram" ? window.open("", "_blank") : null;
+      btn.disabled = true; btn.textContent = "…";
+      fetch(API_BASE + "/api/targets/" + (kind === "email" ? "add-email" : "add-telegram"), {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: t.id })
+      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+        .then(function (res) {
+          if (!res.ok) {
+            if (tab) tab.close();
+            btn.disabled = false; btn.textContent = label;
+            alert((res.data && res.data.error) || "Greška, pokušaj ponovo.");
+            return;
+          }
+          var link = res.data && res.data.telegram_link;
+          if (kind === "telegram" && link) {
+            if (tab) tab.location.href = link;
+            // Popup blocked - hand over a real anchor to click instead of silently doing nothing.
+            else linkDialog("Poveži Telegram",
+              "Otvori Telegram i pritisni Start da povežeš ovu adresu.", "Otvori Telegram", link);
+            pollForConnect(link.split("start=")[1]);
+          } else if (tab) {
+            tab.close();
+          }
+          EXPANDED[t.id] = true;   // keep this address open across the refresh
+          refreshTargets();
+        }).catch(function () {
+          if (tab) tab.close();
+          btn.disabled = false; btn.textContent = label;
+        });
+    });
+  });
+
+  del.addEventListener("click", function () {
+    confirmDialog(
+      "Obriši ovu adresu?",
+      titleCase(t.ulica) + " " + t.broj + ", " + titleCase(t.city) +
+        " - briše se trajno, zajedno sa istorijom obaveštenja. Ne može se poništiti.",
+      "Da, obriši",
+      function () {
+        fetch(API_BASE + "/api/targets/delete", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: t.id })
+        }).then(function () { delete EXPANDED[t.id]; refreshTargets(); });
+      }
+    );
+  });
+
+  return row;
+}
+
+// Telegram links this page has shown, code -> address label; one that disappears without the
+// visitor cancelling it means they pressed Start - the "Povezano" card says so.
+var SEEN_PENDING = {}, DROPPED_CODES = {}, CONNECTED_LABEL = null;
+
+function pendingLabel(p) {
+  return esc(titleCase(p.ulica)) + " " + esc(p.broj) + ", " + esc(titleCase(p.city));
+}
+
+// A new address waiting for its first Telegram Start. Several people (29.10.2026, others before)
+// confirmed the email, saw "Još nema adresa" with a small grey bar above it, and thought the
+// signup had failed. So: one card that says what's left, how, and a way out without Telegram.
+function onboardCard(p) {
+  var card = el("div", "onboard");
+  card.innerHTML =
+    "<div class='ob-title'>Još jedan korak: poveži Telegram</div>" +
+    "<div class='ob-addr'>" + pendingLabel(p) + " <span class='ob-wait'>čeka Telegram</span></div>" +
+    "<ol class='ob-steps'><li>Klikni dugme ispod</li><li>U Telegramu pritisni <b>START</b></li>" +
+    "<li>Gotovo, ova stranica se sama osveži</li></ol>";
+  if (p.link) {
+    var a = el("a", "btn tg block", "Otvori Telegram");
+    a.href = p.link; a.target = "_blank"; a.rel = "noopener";
+    a.onclick = function () { pollForConnect(p.code); };
+    card.appendChild(a);
+  }
+  var alt = el("button", "ob-alt", "Nemaš Telegram? <u>Šalji mi na email</u>");
+  alt.type = "button";
+  alt.onclick = function () {
+    alt.disabled = true;
+    DROPPED_CODES[p.code] = 1;
+    fetch(API_BASE + "/api/pending/to-email", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: p.code })
+    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .then(function (res) {
+        if (!res.ok) { alt.disabled = false; delete DROPPED_CODES[p.code]; alt.innerHTML = esc((res.data && res.data.error) || "Greška, pokušaj ponovo."); return; }
+        CONNECTED_LABEL = { label: pendingLabel(p), via: "email" };
+        refreshTargets(true);
+      }, function () { alt.disabled = false; delete DROPPED_CODES[p.code]; alt.textContent = "Nema veze sa serverom, pokušaj ponovo."; });
+  };
+  card.appendChild(alt);
+  return card;
+}
+
+function renderPending(box, me) {
+  box.innerHTML = "";
+  var now = {};
+  (me.pending_telegram || []).forEach(function (p) { now[p.code] = 1; });
+  Object.keys(SEEN_PENDING).forEach(function (code) {
+    if (!now[code] && !DROPPED_CODES[code]) CONNECTED_LABEL = { label: SEEN_PENDING[code], via: "telegram" };
+    if (!now[code]) delete SEEN_PENDING[code];
+  });
+  if (CONNECTED_LABEL) {
+    var ok = el("div", "onboard done");
+    ok.innerHTML = "<div class='ob-title'>✓ Povezano!</div><div class='ob-addr'>" + CONNECTED_LABEL.label +
+      "</div><div class='ob-note'>Obaveštenja za ovu adresu stižu " +
+      (CONNECTED_LABEL.via === "email" ? "na tvoj email." : "na Telegram.") + "</div>";
+    box.appendChild(ok);
+  }
+  (me.pending_telegram || []).forEach(function (p) {
+    SEEN_PENDING[p.code] = pendingLabel(p);
+    if (!p.attach_target_id) { box.appendChild(onboardCard(p)); return; }
+    // Telegram being added to an address that already works: the short reminder is enough.
+    var item = el("div", "pending");
+    item.innerHTML =
+      "<span>Poveži Telegram za <b>" + esc(titleCase(p.ulica)) + " " + esc(p.broj) + "</b></span>";
+    var acts = el("div", "pactions");
+    if (p.link) {
+      var a = el("a", "btn small", "Poveži &rarr;");
+      a.href = p.link; a.target = "_blank"; a.rel = "noopener";
+      acts.appendChild(a);
+    }
+    // An abandoned link used to sit here for 24h with no way to dismiss it.
+    var x = el("button", "pcancel", "&times;");
+    x.type = "button";
+    x.title = "Otkaži";
+    x.setAttribute("aria-label", "Otkaži povezivanje");
+    x.onclick = function () {
+      x.disabled = true;
+      DROPPED_CODES[p.code] = 1;
+      fetch(API_BASE + "/api/pending/cancel", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: p.code })
+      }).then(refreshTargets, refreshTargets);
+    };
+    acts.appendChild(x);
+    item.appendChild(acts);
+    box.appendChild(item);
+  });
+}
+
+function renderTargetList(list, me) {
+  list.innerHTML = "";
+  if (!me.targets.length) {
+    var waiting = (me.pending_telegram || []).filter(function (p) { return !p.attach_target_id; });
+    list.appendChild(el("div", "empty", waiting.length
+      ? waiting.map(function (p) { return "<b>" + pendingLabel(p) + "</b> čeka Telegram, vidi korak iznad."; }).join("<br>")
+      : "Još nema adresa - dodaj prvu ispod."));
+    return;
+  }
+  var summary = historySummaryRow(me);
+  if (summary) list.appendChild(summary);
+  me.targets.forEach(function (t) { list.appendChild(targetRow(t)); });
+}
+
+// Everything the address list actually draws from. Background refreshes (tab focus, the
+// post-connect poll) compare this and repaint only on a real change, so nothing flickers or
+// moves under the cursor while you're using the page.
+function listSignature(me) {
+  return JSON.stringify([
+    (me.targets || []).map(function (t) {
+      return [t.id, t.is_active, t.email_active, t.telegram_active, t.has_telegram, t.has_email,
+              t.paid_until, t.telegram_username, t.email, t.city, t.ulica, t.broj,
+              t.history_90d, t.history_hours];
+    }),
+    (me.pending_telegram || []).map(function (p) { return p.code; })
+  ]);
+}
+
+var LAST_SIG = null;
+
+function paintFromMe(me, force) {
+  var list = document.getElementById("targetList");
+  var pend = document.getElementById("pendingBox");
+  if (!list || !pend) { renderDashboard(me); LAST_SIG = listSignature(me); return; }
+  var sig = listSignature(me);
+  if (!force && sig === LAST_SIG) return;
+  LAST_SIG = sig;
+  renderPending(pend, me);
+  renderTargetList(list, me);
+}
+
+// Re-renders ONLY the pending boxes and the address list. The "Dodaj adresu" form is deliberately
+// left untouched - a full renderDashboard() would collapse it and throw away whatever was typed,
+// which is exactly what made acting on one address look like a glitch.
+function refreshTargets(force) {
+  return fetch(API_BASE + "/api/me").then(function (r) {
+    if (r.status === 401) { renderLoggedOut(); return null; }
+    return r.json();
+  }).then(function (me) {
+    if (me) paintFromMe(me, force !== false);
+    return me;
+  });
+}
+
+// After sending someone off to Telegram there's nothing to tell this page they pressed Start -
+// the bot writes the target server-side and the dashboard would sit stale until a manual reload.
+// Poll briefly until that specific code is consumed, then stop. Bounded on purpose: this is a
+// human tapping one button, not something worth polling indefinitely.
+var CONNECT_POLL = null;
+
+function stopConnectPoll() {
+  if (CONNECT_POLL) { clearInterval(CONNECT_POLL); CONNECT_POLL = null; }
+}
+
+function pollForConnect(code) {
+  stopConnectPoll();
+  if (!code) return;
+  var tries = 0;
+  CONNECT_POLL = setInterval(function () {
+    tries++;
+    if (tries > 40) { stopConnectPoll(); return; }   // ~2 min at 3s, then give up quietly
+    fetch(API_BASE + "/api/me").then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (me) {
+        if (!me) return;
+        paintFromMe(me, false);
+        var stillPending = (me.pending_telegram || []).some(function (p) { return p.code === code; });
+        if (!stillPending) stopConnectPoll();   // consumed - the address is live now
+      }).catch(function () {});
+  }, 3000);
+}
+
+function renderDashboard(me) {
+  var main = document.getElementById("main");
+  main.innerHTML = "";
+
+  var top = el("div", "topbar");
+  top.innerHTML =
+    "<div class='who'>Prijavljen/a kao <b>" + esc(me.email) + "</b></div>" +
+    "<div class='actions'>" +
+      "<button class='btn ghost small' id='logoutBtn'>Odjavi se</button>" +
+    "</div>";
+  main.appendChild(top);
+
+  var pend = el("div", "");
+  pend.id = "pendingBox";
+  renderPending(pend, me);
+  main.appendChild(pend);
+
+  var card = el("div", "card");
+  card.innerHTML = "<h1>Tvoje adrese</h1><p class='lede'>Prekidač pauzira obaveštenja za adresu. " +
+    "Otvori adresu za kanale i trajno brisanje.</p>";
+  var list = el("div", "list");
+  list.id = "targetList";
+  renderTargetList(list, me);
+  card.appendChild(list);
+
+  var details = el("details", "addform");
+  details.innerHTML =
+    "<summary>+ Dodaj adresu</summary>" +
+    "<div id='addMsg'></div>" +
+    "<form id='addForm' style='margin-top:14px'>" +
+      "<div class='field'><label for='aCity'>Grad / mesto</label>" +
+      "<input type='text' id='aCity' placeholder='Počni da kucaš…' autocomplete='off' required>" +
+      "<div class='suggest-list' id='aCitySuggest' hidden></div></div>" +
+      "<div class='field'><label for='aUlica'>Ulica</label>" +
+      "<input type='text' id='aUlica' placeholder='Prvo izaberi grad' autocomplete='off' disabled required>" +
+      "<div class='suggest-list' id='aStreetSuggest' hidden></div></div>" +
+      "<div class='field'><label for='aBroj'>Broj</label>" +
+      "<input type='text' id='aBroj' placeholder='npr. 12, 12a ili bb' autocomplete='off' maxlength='5' disabled required></div>" +
+      "<div class='field'><label>Obaveštenje putem</label>" +
+      "<div class='channel-toggle'>" +
+        "<button type='button' class='chan on' data-chan='email'>Email</button>" +
+        "<button type='button' class='chan' data-chan='telegram'>Telegram</button>" +
+      "</div><span class='field-hint'>Email je podrazumevan. Možeš izabrati i oba.</span></div>" +
+      "<div class='field' id='aAckField' hidden>" +
+        "<label style='display:flex;gap:8px;align-items:flex-start;font-weight:400;font-size:13.5px;color:var(--dim)'>" +
+        "<input type='checkbox' id='aAck' style='margin-top:3px;flex:none;width:auto'>" +
+        "<span>Razumem da ovo mesto još nije pokriveno.</span></label></div>" +
+      "<button type='submit' class='btn block' id='addSubmit' disabled>Dodaj</button>" +
+      "<p class='field-hint' style='margin-top:10px;text-align:center'>Dodavanjem adrese " +
+        "potvrđuješ saglasnost sa <a href='https://najavaradova.rs/terms.html' target='_blank' " +
+        "rel='noopener'>Uslovima korišćenja</a> i <a href='https://najavaradova.rs/privacy.html' " +
+        "target='_blank' rel='noopener'>Politikom privatnosti</a>.</p>" +
+    "</form>";
+  card.appendChild(details);
+  main.appendChild(card);
+
+  var danger = el("div", "card danger-zone");
+  danger.innerHTML =
+    "<h1 style='font-size:17px'>Brisanje naloga</h1>" +
+    "<p>Trajno briše sve tvoje adrese, istoriju obaveštenja i nalog. Ne može se poništiti.</p>" +
+    "<button class='btn danger' id='deleteBtn'>Obriši sve moje podatke</button>";
+  main.appendChild(danger);
+
+  wireAddForm();
+
+  // Asks first, like the delete buttons: one stray tap used to log out at once.
+  document.getElementById("logoutBtn").onclick = function () {
+    confirmDialog(
+      "Odjavi se?",
+      "Obaveštenja za tvoje adrese stižu i dalje. Za ponovni ulazak dobićeš link na email.",
+      "Odjavi se",
+      function () {
+        fetch(API_BASE + "/auth/logout", { method: "POST" }).then(function () { location.reload(); });
+      },
+      "");
+  };
+  document.getElementById("deleteBtn").onclick = function () {
+    confirmDialog(
+      "Obriši sve moje podatke?",
+      "Ovo trajno briše sve tvoje adrese i nalog. Ne može se poništiti.",
+      "Da, obriši sve",
+      function () {
+        fetch(API_BASE + "/api/delete-account", { method: "POST" }).then(function () { location.reload(); });
+      }
+    );
+  };
+}
+
+function wireAddForm() {
+  var cCity = document.getElementById("aCity");
+  var citySuggest = document.getElementById("aCitySuggest");
+  var cUlica = document.getElementById("aUlica");
+  var streetSuggest = document.getElementById("aStreetSuggest");
+  var ulicaId = null;
+  var cBroj = document.getElementById("aBroj");
+  var cityKnown = false;
+  var CITY_LIST = [], CITY_FOLDED = [];
+  var CITY_NOSTREET = [], CITY_NOSTREET_FOLDED = [];   // opštine with no RGZ streets yet
+  var CITY_OPSTINE = [], CITY_OPSTINE_FOLDED = [];     // opstina_lat of each CITY_LIST place
+
+  fetch(API_BASE + "/api/cities").then(function (r) { return r.json(); }).then(function (d) {
+    CITY_LIST = d.cities || [];
+    CITY_FOLDED = CITY_LIST.map(fold);
+    CITY_NOSTREET = d.nostreet || [];
+    CITY_NOSTREET_FOLDED = CITY_NOSTREET.map(fold);
+    CITY_OPSTINE = d.opstine || [];
+    CITY_OPSTINE_FOLDED = CITY_OPSTINE.map(fold);
+  });
+
+  // Same as citySuggestions() / coveredPlaceNamed() in web/signup.js: places by name, then (3+
+  // letters) every place of a matching opština ("Grocka" -> Kaluđerica...), then opštine with no
+  // street data; and the covered place a typed "Beograd, Grocka" names, so it is picked from
+  // the list instead of being saved as uncovered (27.10.2026).
+  function citySuggestions(fq) {
+    var hits = [], seen = {};
+    for (var i = 0; i < CITY_LIST.length && hits.length < 12; i++) {
+      if (nameMatches(CITY_FOLDED[i], fq)) { hits.push({ name: CITY_LIST[i], known: true }); seen[i] = 1; }
+    }
+    for (var o = 0; fq.length >= 3 && o < CITY_LIST.length && hits.length < 24; o++) {
+      if (!seen[o] && CITY_OPSTINE_FOLDED[o] && nameMatches(CITY_OPSTINE_FOLDED[o], fq)) {
+        hits.push({ name: CITY_LIST[o], known: true, sub: "opština " + titleCase(CITY_OPSTINE[o].split(" (")[0]) });
+      }
+    }
+    for (var j = 0; j < CITY_NOSTREET.length && hits.length < 30; j++) {
+      if (nameMatches(CITY_NOSTREET_FOLDED[j], fq)) hits.push({ name: CITY_NOSTREET[j], known: false, sub: "još bez liste ulica" });
+    }
+    return hits;
+  }
+
+  function coveredPlaceNamed(typed) {
+    var words = " " + fold(typed).replace(/[^a-z0-9]+/g, " ").trim() + " ";
+    function named(f) {
+      var k = (f || "").replace(/[^a-z0-9]+/g, " ").trim();
+      return k.length >= 3 && words.indexOf(" " + k + " ") !== -1;
+    }
+    for (var n = 0; n < CITY_NOSTREET_FOLDED.length; n++) if (named(CITY_NOSTREET_FOLDED[n])) return null;
+    // A place named next to an opština must lie in it ("Jabuka, Grocka" is not Pančevo's Jabuka).
+    var opstina = null, place = null;
+    for (var o = 0; o < CITY_OPSTINE_FOLDED.length && !opstina; o++) {
+      if (named(CITY_OPSTINE_FOLDED[o].split(" (")[0])) opstina = CITY_OPSTINE[o];
+    }
+    for (var i = 0; i < CITY_FOLDED.length && !place; i++) {
+      var f = CITY_FOLDED[i], fo = (CITY_OPSTINE_FOLDED[i] || "").split(" (")[0], paren = f.indexOf(" (");
+      var isNamed = paren !== -1 ? named(f.slice(paren + 2, -1)) : (named(f) && f !== fo);
+      if (isNamed && (!opstina || CITY_OPSTINE[i] === opstina)) place = CITY_LIST[i];
+    }
+    if (place || opstina) return titleCase(place || opstina.split(" (")[0]);
+    return named("beograd") || named("belgrade") ? "Beograd" : named("nis") ? "Niš" : null;
+  }
+
+  function selectedChannels() {
+    return Array.prototype.filter.call(
+      document.querySelectorAll(".addform .chan"), function (x) { return x.classList.contains("on"); }
+    ).map(function (x) { return x.dataset.chan; });
+  }
+
+  // Independent toggles now, not a radio - you can arm Telegram and email at once. At least one
+  // must stay on (clicking the only lit button back off is a no-op).
+  document.querySelectorAll(".addform .chan").forEach(function (b) {
+    b.onclick = function () {
+      if (b.classList.contains("on") && selectedChannels().length === 1) return;
+      b.classList.toggle("on");
+      updateAddEnabled();
+    };
+  });
+
+  function updateAddEnabled() {
+    var cityOk = cCity.value.trim().length >= 2;
+    var ulicaOk = cityKnown ? !!ulicaId : cUlica.value.trim().length >= 2;
+    var brojOk = validBrojClient(cBroj.value);
+    var chanOk = selectedChannels().length >= 1;
+    var ackOk = cityKnown || document.getElementById("aAck").checked;
+    document.getElementById("addSubmit").disabled = !(cityOk && ulicaOk && brojOk && chanOk && ackOk);
+  }
+
+  function applyCityMode(known) {
+    cityKnown = known;
+    cUlica.value = ""; ulicaId = null; cBroj.value = "";
+    cUlica.disabled = false; cBroj.disabled = false;
+    document.getElementById("aAckField").hidden = known;   // uncovered: show the ack up front
+    if (known) document.getElementById("aAck").checked = false;
+    cUlica.placeholder = known ? "npr. Futoška" : "Upiši naziv ulice";
+    if (known) cBroj.disabled = true;
+    updateAddEnabled();
+  }
+
+  wireSuggest(cCity, citySuggest, function (q) {
+    return Promise.resolve(citySuggestions(fold(q)));
+  }, function (item) {
+    return titleCase(item.name) + (item.sub ? "<span class='sub'>" + item.sub + "</span>" : "");
+  }, function (picked) {
+    if (picked) { cCity.value = titleCase(picked.name); applyCityMode(picked.known); }
+    else { cUlica.disabled = true; cBroj.disabled = true; cityKnown = false; updateAddEnabled(); }
+  });
+
+  cCity.addEventListener("blur", function () {
+    setTimeout(function () {
+      var typed = cCity.value.trim();
+      if (!typed) return;
+      var fq = fold(typed), exact = -1, hits = [];
+      for (var i = 0; i < CITY_FOLDED.length; i++) {
+        if (CITY_FOLDED[i] === fq) { exact = i; break; }
+        if (nameMatches(CITY_FOLDED[i], fq)) hits.push(i);
+      }
+      var idx = exact !== -1 ? exact : (hits.length === 1 ? hits[0] : -1);
+      if (idx !== -1) { cCity.value = titleCase(CITY_LIST[idx]); applyCityMode(true); return; }
+      var named = coveredPlaceNamed(typed);
+      if (named) {
+        cCity.value = named;
+        cCity.dispatchEvent(new Event("input"));
+        cCity.focus();
+        document.getElementById("aAckField").hidden = true;
+        return;
+      }
+      // No street-data city - snap to a known opština label if one matches, then uncovered mode.
+      var nExact = -1, nHits = [];
+      for (var k = 0; k < CITY_NOSTREET_FOLDED.length; k++) {
+        if (CITY_NOSTREET_FOLDED[k] === fq) { nExact = k; break; }
+        if (nameMatches(CITY_NOSTREET_FOLDED[k], fq)) nHits.push(k);
+      }
+      var nIdx = nExact !== -1 ? nExact : (nHits.length === 1 ? nHits[0] : -1);
+      if (nIdx !== -1) cCity.value = titleCase(CITY_NOSTREET[nIdx]);
+      applyCityMode(false);
+    }, 160);
+  });
+
+  document.getElementById("aAck").addEventListener("change", updateAddEnabled);
+
+  wireSuggest(cUlica, streetSuggest, function (q) {
+    if (!cityKnown) return Promise.resolve([]);
+    return fetch(API_BASE + "/api/streets?city=" + encodeURIComponent(cCity.value) + "&q=" + encodeURIComponent(q))
+      .then(function (r) { return r.json(); }).then(function (d) { return d.streets || []; });
+  }, function (item) { return titleCase(item.name) + "<span class='sub'>" + titleCase(item.opstina) + "</span>"; },
+  function (picked) {
+    if (picked) { cUlica.value = titleCase(picked.name); ulicaId = picked.id; cBroj.disabled = false; }
+    else if (cityKnown) { ulicaId = null; cBroj.value = ""; cBroj.disabled = true; }
+    updateAddEnabled();
+  });
+
+  cBroj.addEventListener("input", function () {
+    var cleaned = cBroj.value.replace(/[^0-9\p{L}]/gu, "").toUpperCase();
+    if (cleaned !== cBroj.value) cBroj.value = cleaned;
+    updateAddEnabled();
+  });
+  cUlica.addEventListener("input", updateAddEnabled);
+  cCity.addEventListener("input", updateAddEnabled);
+
+  document.getElementById("addForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var msgBox = document.getElementById("addMsg");
+    msgBox.innerHTML = "";
+    var btn = document.getElementById("addSubmit");
+    // Same synchronous-open trick the per-address connect button uses: if this address wants
+    // Telegram, the tab has to be opened here inside the submit gesture, or the popup blocker
+    // eats it once the request resolves. "Dodaj" then lands you in Telegram directly instead of
+    // leaving a banner to go and click.
+    var wantsTelegram = selectedChannels().indexOf("telegram") !== -1;
+    var tab = wantsTelegram ? window.open("", "_blank") : null;
+    btn.disabled = true; btn.textContent = "Dodajem…";
+    fetch(API_BASE + "/api/targets", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        city: cCity.value.trim(), ulica: cUlica.value.trim(), broj: cBroj.value.trim(),
+        channels: selectedChannels(), ack_uncovered: document.getElementById("aAck").checked
+      })
+    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .then(function (res) {
+        btn.disabled = false; btn.textContent = "Dodaj";
+        if (!res.ok) {
+          if (tab) tab.close();
+          msgBox.appendChild(el("div", "msg err", esc((res.data && res.data.error) || "Greška.")));
+          if (res.data && res.data.code === "UNCOVERED") document.getElementById("aAckField").hidden = false;
+          if (res.data && res.data.code === "PICK_PLACE") {
+            document.getElementById("aAckField").hidden = true;
+            document.getElementById("aAck").checked = false;
+          }
+          return;
+        }
+        var link = res.data && res.data.telegram_link;
+        if (wantsTelegram && link) {
+          if (tab) tab.location.href = link;
+          else linkDialog("Poveži Telegram",
+            "Otvori Telegram i pritisni Start da povežeš ovu adresu.", "Otvori Telegram", link);
+          pollForConnect(link.split("start=")[1]);
+        } else if (tab) {
+          tab.close();
+        }
+        // Clear and close the form ourselves, then refresh only the list - the old full
+        // renderDashboard() worked here too, but going through the same targeted path as every
+        // other action keeps one code path (and can't blow away an expander mid-flight).
+        cCity.value = ""; cUlica.value = ""; cBroj.value = "";
+        ulicaId = null; cityKnown = false;
+        cUlica.disabled = true; cBroj.disabled = true;
+        document.getElementById("aAckField").hidden = true;
+        document.getElementById("aAck").checked = false;
+        updateAddEnabled();
+        var box = document.querySelector(".addform");
+        if (box) box.open = false;
+        refreshTargets();
+      }).catch(function () {
+        if (tab) tab.close();
+        btn.disabled = false; btn.textContent = "Dodaj";
+        msgBox.appendChild(el("div", "msg err", "Server nije dostupan."));
+      });
+  });
+}
+
+// Same shell as confirmDialog, but the action is a real anchor - used when a popup blocker
+// stopped us opening Telegram programmatically, since a click on an <a> is never blocked.
+function linkDialog(title, body, label, href) {
+  var overlay = el("div", "confirm-overlay");
+  overlay.innerHTML =
+    "<div class='confirm-box'>" +
+      "<h4>" + esc(title) + "</h4>" +
+      "<p>" + esc(body) + "</p>" +
+      "<div class='row'>" +
+        "<button class='btn ghost' id='linkCancel'>Zatvori</button>" +
+        "<a class='btn' id='linkGo' target='_blank' rel='noopener'>" + esc(label) + "</a>" +
+      "</div>" +
+    "</div>";
+  document.body.appendChild(overlay);
+  var go = overlay.querySelector("#linkGo");
+  go.href = href;   // set as a property, never interpolated into the markup above
+  go.onclick = function () { overlay.remove(); };
+  overlay.querySelector("#linkCancel").onclick = function () { overlay.remove(); };
+  overlay.addEventListener("click", function (e) { if (e.target === overlay) overlay.remove(); });
+}
+
+// yesClass styles the confirm button: "danger" (red) unless given; "" is the plain button, for a
+// step that loses nothing, like logging out.
+function confirmDialog(title, body, confirmLabel, onConfirm, yesClass) {
+  if (yesClass === undefined) yesClass = "danger";
+  var overlay = el("div", "confirm-overlay");
+  overlay.innerHTML =
+    "<div class='confirm-box'>" +
+      "<h4>" + esc(title) + "</h4>" +
+      "<p>" + esc(body) + "</p>" +
+      "<div class='row'>" +
+        "<button class='btn ghost' id='confirmCancel'>Odustani</button>" +
+        "<button class='btn " + yesClass + "' id='confirmYes'>" + esc(confirmLabel) + "</button>" +
+      "</div>" +
+    "</div>";
+  document.body.appendChild(overlay);
+  overlay.querySelector("#confirmCancel").onclick = function () { overlay.remove(); };
+  overlay.addEventListener("click", function (e) { if (e.target === overlay) overlay.remove(); });
+  overlay.querySelector("#confirmYes").onclick = function () { overlay.remove(); onConfirm(); };
+}
+
+/* ---------- boot ---------- */
+
+function loadDashboard() {
+  fetch(API_BASE + "/api/me").then(function (r) {
+    if (r.status === 401) { renderLoggedOut(); return null; }
+    return r.json();
+  }).then(function (me) {
+    if (me) { renderDashboard(me); LAST_SIG = listSignature(me); }
+  }).catch(function () {
+    document.getElementById("main").innerHTML = "<div class='card'><p class='lede'>Server nije dostupan.</p></div>";
+  });
+}
+
+// Coming back to this tab (typically straight from pressing Start in Telegram) re-checks and
+// repaints only if something actually changed - so the address shows up connected without a
+// manual reload, and without anything moving if nothing happened.
+document.addEventListener("visibilitychange", function () {
+  if (document.visibilityState !== "visible") return;
+  if (!document.getElementById("targetList")) return;   // login screen, nothing to refresh
+  refreshTargets(false);
+});
+
+loadDashboard();
+</script>
+</body>
+</html>

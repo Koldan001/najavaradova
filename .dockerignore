@@ -1,0 +1,22 @@
+# Keeps the build context small and stops large/secret local files from ever landing in an
+# image layer - Docker sends everything not listed here to the daemon on every build.
+
+.git/
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Big local reference data + the live DB - these come in via the docker-compose volume mount
+# instead (see data/ in docker-compose.yml), never baked into the image itself.
+data/
+cache/
+viber_session/
+
+.env
+deploy/backup.env
+.claude/
+.vscode/
+.idea/
+web/outages.json

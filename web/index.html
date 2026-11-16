@@ -1,0 +1,2151 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Applied before any CSS is parsed, so an explicit "svetla" choice from a previous visit never
+     flashes dark first. A cookie, not localStorage - localStorage is per-origin and this choice
+     has to be the same on app.najavaradova.rs (the dashboard) too, not just here; a cookie
+     scoped to "domain=najavaradova.rs" is visible from any subdomain (confirmed real complaint:
+     picking a theme here and having the dashboard ignore it read as broken, not "expected,
+     different site"). "sistem" (or nothing saved yet) sets no attribute at all - the
+     prefers-color-scheme media query in <style> below is what handles that case. Wrapped in
+     try/catch: cookies can throw in a locked-down context, and the site must still render
+     (falling back to system/dark) rather than white-screen on a blocked API. -->
+<script>try{var m=document.cookie.match(/(?:^|; )theme=([^;]*)/);var t=m?decodeURIComponent(m[1]):null;if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<title>Nestanak struje i vode danas — sve najave isključenja u Srbiji</title>
+<meta name="description" content="Isključenja struje, vode i grejanja danas i sutra u celoj Srbiji, na jednoj mapi: ulice i vreme iz zvaničnih najava. Poruka samo za tvoju ulicu i broj, besplatno.">
+<link rel="canonical" href="https://najavaradova.rs/">
+<link rel="icon" href="/icon-512.png" type="image/png" sizes="512x512">
+<link rel="apple-touch-icon" href="/icon-512.png">
+
+<!-- Open Graph / social preview -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NajavaRadova.rs">
+<meta property="og:title" content="Nestanak struje i vode danas — sve najave isključenja u Srbiji">
+<meta property="og:description" content="Sve najave planiranih i vanrednih isključenja vode, struje i grejanja u Srbiji, na jednoj mapi. Besplatna obaveštenja na tvoju adresu.">
+<meta property="og:url" content="https://najavaradova.rs/">
+<meta property="og:image" content="https://najavaradova.rs/icon-512.png">
+<meta property="og:locale" content="sr_RS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Nestanak struje i vode danas — sve najave isključenja u Srbiji">
+<meta name="twitter:description" content="Sve najave planiranih i vanrednih isključenja vode, struje i grejanja u Srbiji, na jednoj mapi.">
+<meta name="twitter:image" content="https://najavaradova.rs/icon-512.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "NajavaRadova.rs",
+  "url": "https://najavaradova.rs/",
+  "description": "Sve najave planiranih i vanrednih isključenja vode, struje i grejanja u Srbiji, na jednoj mapi.",
+  "inLanguage": "sr",
+  "publisher": { "@type": "Person", "name": "Branimir Koldan", "url": "https://koldan.dev" }
+}
+</script>
+<!-- Simple SVG favicon - dark badge matching the site's own :root palette, exclamation mark
+     (universal "alert" shape, legible at 16px unlike anything more literal would be), dot in
+     the map's own VODA blue as a small tie-back to the utility-color palette used throughout.
+     SVG, not PNG - crisp at any size, no separate asset file or build step needed. Known gap:
+     no apple-touch-icon PNG fallback for iOS home-screen bookmarks specifically. -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23101013'/%3E%3Crect x='27' y='13' width='10' height='27' rx='5' fill='%23F2F0EE'/%3E%3Ccircle cx='32' cy='48' r='6' fill='%235FAEE3'/%3E%3C/svg%3E">
+<!-- Map libraries, self-hosted under /vendor (was unpkg - see git history). Same exact pinned
+     bytes as before: each file's hash was checked against the SRI hash unpkg was serving before
+     switching, so this is a location change only, not a version change. Self-hosting means these
+     load off the connection the browser already has open to this origin instead of a fresh
+     DNS+TLS round trip to unpkg.com, and drops a third-party processor from web/privacy.html and
+     from web/_headers' CSP. -->
+<link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
+<!-- MapLibre GL - basemap only (OpenFreeMap's dark vector style, via the leaflet-maplibre-gl
+     bridge). Pinned to the 5.x line deliberately: v6 dropped the classic global/UMD build this
+     bridge plugin needs (window.maplibregl from a plain <script> tag) in favour of ESM-only - see
+     initMap()'s comment for the full basemap-swap rationale. Its CSS and ~940 KB of JS are NOT
+     loaded here: loadBasemap() adds them after the page is up, so the list, the outage shapes and
+     the signup button never wait on the basemap engine. The connections it will need are opened
+     early instead. -->
+<link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin>
+<link rel="preconnect" href="https://api.najavaradova.rs" crossorigin>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #101013;
+    --panel-border: #24242A;
+    --hair: #1E1E23;
+    --text: #F2F0EE;
+    --dim: #A5A1AB;
+    --mute: #8C8892;
+    --link: #7FA9F5;
+    --link-hi: #B3CBFA;
+    /* Category colors - voda/struja/grejanje/radovi - are semantic (map + kind-dots) and stay
+       pixel-identical in every theme, so they're never redefined in the light blocks below. */
+    --voda: #5FAEE3;
+    --struja: #E0B05C;
+    --grejanje: #E08468;
+    --live: #6FD09B;
+    --live-dot: #4CC589;
+    --sel-bg: #17171B;
+    --mono: ui-monospace, "SF Mono", "Roboto Mono", Menlo, monospace;
+    --ease: cubic-bezier(.22,.61,.36,1);
+
+    /* ---- surface/border/text roles that used to be hardcoded hex scattered through the file -
+       named here instead so a theme only has to redefine this one list. Dark values below are
+       exactly what was already hardcoded everywhere (zero visual change for anyone who never
+       touches the toggle); the light half of each pair lives in the two blocks further down. */
+    --card-bg: #1B1B20;       /* popups, modal, cookie card, received-message bubble */
+    --border2: #2B2B31;       /* border that goes with --card-bg / inputs */
+    --ctrl-bg: #1E1E23;       /* ghost buttons, leaflet zoom control, suggest-list */
+    --ctrl-hover: #26262C;    /* hover state of the above */
+    --border-strong: #4a4a54; /* focus rings, "on" chip borders */
+    --border-strong-2: #3a3a42;
+    --border-strong-3: #3d3d45;
+    --border-strong-4: #45444E;
+    --time-text: #C9C5CE;     /* .ocard timestamp, legend labels */
+    --sep: #34343B;           /* 1px dividers inside a card row */
+    --bubble-text: #EDEAF0;   /* received-message bubble body text */
+    --bubble-strong: #fff;    /* received-message bubble bold text */
+    --btn-hover: #fff;        /* solid var(--text) buttons brighten on hover in dark mode */
+    --demo-text: #E7CB93;
+    --err-text: #E8A896;
+    --tint-sm: rgba(255,255,255,.06);
+    --tint-md: rgba(255,255,255,.07);
+    --tint-lg: rgba(255,255,255,.08);
+    --tint-xl: rgba(255,255,255,.10);
+    --panelfloat-a: rgba(16,16,19,.88);
+    --panelfloat-b: rgba(16,16,19,.9);
+    --panelfloat-c: rgba(16,16,19,.92);
+    --attrfloat: rgba(16,16,19,.72);
+    --lockscrim: rgba(16,16,19,.4);
+  }
+  /* Light theme: system preference (unless the visitor explicitly chose dark) ... */
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) { color-scheme: light; }
+    :root:not([data-theme="dark"]) {
+      --bg: #EFEBE2; --panel-border: #DCD4C3; --hair: #E2DBC9;
+      --text: #2A2620; --dim: #6E6858; --mute: #8B8471;
+      --link: #3763B0; --link-hi: #2A4F8C;
+      --live: #237A54; --live-dot: #2E9765;
+      --sel-bg: #E6DFCE;
+      --card-bg: #FAF7F0; --border2: #DCD4C3;
+      --ctrl-bg: #ECE5D5; --ctrl-hover: #DED5C0;
+      --border-strong: #B9AD8F; --border-strong-2: #B9AD8F;
+      --border-strong-3: #B9AD8F; --border-strong-4: #B9AD8F;
+      --time-text: #54503f; --sep: #E2DBC9;
+      --bubble-text: #2A2620; --bubble-strong: #171510;
+      --btn-hover: #3d372c;
+      --demo-text: #8A6613; --err-text: #A8442B;
+      --tint-sm: rgba(0,0,0,.05); --tint-md: rgba(0,0,0,.06);
+      --tint-lg: rgba(0,0,0,.07); --tint-xl: rgba(0,0,0,.08);
+      --panelfloat-a: rgba(247,244,237,.88); --panelfloat-b: rgba(247,244,237,.9);
+      --panelfloat-c: rgba(247,244,237,.92); --attrfloat: rgba(247,244,237,.82);
+      --lockscrim: rgba(247,244,237,.55);
+    }
+  }
+  /* ... or the visitor explicitly picked "svetla" from the toggle, regardless of system setting. */
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #EFEBE2; --panel-border: #DCD4C3; --hair: #E2DBC9;
+    --text: #2A2620; --dim: #6E6858; --mute: #8B8471;
+    --link: #3763B0; --link-hi: #2A4F8C;
+    --live: #237A54; --live-dot: #2E9765;
+    --sel-bg: #E6DFCE;
+    --card-bg: #FAF7F0; --border2: #DCD4C3;
+    --ctrl-bg: #ECE5D5; --ctrl-hover: #DED5C0;
+    --border-strong: #B9AD8F; --border-strong-2: #B9AD8F;
+    --border-strong-3: #B9AD8F; --border-strong-4: #B9AD8F;
+    --time-text: #54503f; --sep: #E2DBC9;
+    --bubble-text: #2A2620; --bubble-strong: #171510;
+    --btn-hover: #3d372c;
+    --demo-text: #8A6613; --err-text: #A8442B;
+    --tint-sm: rgba(0,0,0,.05); --tint-md: rgba(0,0,0,.06);
+    --tint-lg: rgba(0,0,0,.07); --tint-xl: rgba(0,0,0,.08);
+    --panelfloat-a: rgba(247,244,237,.88); --panelfloat-b: rgba(247,244,237,.9);
+    --panelfloat-c: rgba(247,244,237,.92); --attrfloat: rgba(247,244,237,.82);
+    --lockscrim: rgba(247,244,237,.55);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { color: var(--link-hi); }
+  h1, h2 { font-weight: 700; letter-spacing: -.03em; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { transition: none !important; animation: none !important; }
+  }
+
+  /* header — static, scrolls away with the page */
+  header {
+    display: flex; flex-direction: column;
+    background: var(--bg);
+    border-bottom: 1px solid var(--panel-border);
+  }
+  .hrow {
+    display: flex; align-items: center; justify-content: space-between; gap: 24px;
+    height: 56px; padding: 0 clamp(18px, 3vw, 32px);
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+  .brand .mark { align-self: center; flex-shrink: 0; border-radius: 5px; }
+  .brand .name { font-size: 17px; font-weight: 700; letter-spacing: -.02em; white-space: nowrap; }
+  .brand .name .tld { color: var(--link); font-weight: 400; }
+  .brand .tag {
+    font-size: 13.5px; color: var(--mute); letter-spacing: -.005em; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+    transition: opacity .4s var(--ease);
+  }
+  .brand .tag.swap { opacity: 0; }
+  .hactions { display: flex; align-items: center; gap: 18px; flex-shrink: 0; }
+  /* Invisible but still taking its space until the login check settles (revealHactions()), so
+     its late arrival doesn't push the whole page down - on a phone it wraps to its own row. */
+  .hactions.pending { visibility: hidden; }
+  /* Persistent way back to app.najavaradova.rs/dashboard - the only such link anywhere on the
+     marketing site. Without it, once someone leaves the one-time post-confirmation redirect
+     there (closes the tab, comes back tomorrow), there was no path back to their own account -
+     confirmed as a real, live-tested gap, not a hypothetical one. Deliberately plain-text/quiet,
+     not a second competing button next to .cta - this is a fallback for existing users, not the
+     primary action being marketed to a first-time visitor. The dashboard itself decides
+     logged-in vs logged-out (shows the login form either way), so this link is always shown
+     regardless of whether this origin can tell if the visitor has a session on the other one. */
+  .dashlink { font-size: 13.5px; font-weight: 600; color: var(--dim); white-space: nowrap; }
+  .dashlink:hover { color: var(--text); }
+  /* /upravnici - a quiet way in for building managers; no prompt aimed at residents. The header
+     link gives way on phones, where it pushed the signup button off the screen. */
+  .mgr-more { display: inline-block; margin-top: 14px; font-size: 13.5px; color: var(--link); }
+  .mgr-more:hover { color: var(--link-hi); }
+  @media (max-width: 600px) { .mgrlink { display: none; } }
+  .cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 15px; border-radius: 8px;
+    background: var(--text); color: var(--bg);
+    font-size: 14.5px; font-weight: 600; white-space: nowrap;
+    transition: background .18s var(--ease), transform .18s var(--ease);
+  }
+  .cta:hover { background: var(--btn-hover); color: var(--bg); transform: translateY(-1px); }
+  .cta .arrow { transition: transform .25s var(--ease); }
+
+  /* Sistem / tamna / svetla toggle - see applyTheme()/cycleTheme(). Three tiny icon buttons in
+     one pill, the active one lifted onto --bg so it reads as "selected" against the other two. */
+  .theme-toggle {
+    display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 20px;
+    background: var(--sel-bg); border: 1px solid var(--panel-border); flex-shrink: 0;
+  }
+  .theme-toggle button {
+    all: unset; width: 26px; height: 24px; display: flex; align-items: center; justify-content: center;
+    border-radius: 16px; font-size: 12.5px; line-height: 1; cursor: pointer; color: var(--mute);
+  }
+  .theme-toggle button.on { background: var(--bg); color: var(--text); }
+
+  /* floating "back to map" — only while scrolled past the map */
+  .tomap {
+    position: fixed; right: 16px; bottom: 16px; z-index: 900;
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 10px 15px; border-radius: 999px;
+    background: var(--text); color: var(--bg); border: none;
+    font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0,0,0,.35);
+    transition: bottom .15s var(--ease);
+  }
+
+  /* map + sidebar */
+  .app {
+    display: grid; grid-template-columns: 400px 1fr;
+    height: var(--app-h, calc(100vh - 104px)); min-height: 520px;
+  }
+  aside { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--panel-border); }
+  .side-head { padding: clamp(22px, 2.6vw, 30px) clamp(20px, 2.4vw, 30px) 18px; }
+  .live-badge {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11.5px; letter-spacing: .11em; text-transform: uppercase; font-weight: 600;
+    color: var(--live); margin-bottom: 14px;
+  }
+  .live-badge .dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--live-dot);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  /* Shown instead of the live badge while the built-in demo data is on screen. */
+  .live-badge.demo { color: var(--struja); }
+  .live-badge.demo .dot { background: var(--struja); animation: none; }
+  .demo-note {
+    margin-top: 10px; padding: 10px 12px; border-radius: 8px;
+    background: rgba(224,176,92,.09); border: 1px solid rgba(224,176,92,.28);
+    font-size: 13.5px; line-height: 1.45; color: var(--demo-text);
+  }
+  .side-head h1 { font-size: clamp(25px, 2.3vw, 32px); line-height: 1.12; letter-spacing: -.032em; margin-bottom: 10px; text-wrap: balance; }
+  .side-head p { font-size: 15px; color: var(--dim); text-wrap: pretty; }
+
+  .tabs { display: flex; gap: 24px; padding: 0 clamp(20px, 2.4vw, 30px); border-bottom: 1px solid var(--panel-border); }
+  .tab {
+    display: flex; align-items: baseline; gap: 7px;
+    padding: 15px 0 14px; margin-bottom: -1px;
+    background: none; border: none; border-bottom: 2px solid transparent;
+    color: var(--mute); font-family: inherit; font-size: 15px; font-weight: 600; letter-spacing: -.01em;
+    cursor: pointer; transition: color .18s var(--ease), border-color .18s var(--ease);
+  }
+  .tab:hover { color: var(--dim); }
+  .tab .n { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--mute); }
+  .tab.active { color: var(--text); border-bottom-color: var(--text); }
+
+  .scope {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 10px clamp(20px, 2.4vw, 30px);
+    border-bottom: 1px solid var(--hair);
+    font-size: 13px; color: var(--mute);
+  }
+  .scope button {
+    /* Deliberately NOT link-blue - this resets an in-page filter, it doesn't navigate anywhere,
+       and styling it identically to "Zvanična objava" made it read as an external link. A small
+       neutral pill (same language as .viewtoggle button) signals "action here", not "leaves the
+       page". */
+    background: var(--card-bg); border: 1px solid var(--border2); border-radius: 8px;
+    padding: 5px 11px;
+    color: var(--dim); font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  }
+  .scope button:hover { color: var(--text); border-color: var(--border-strong-2); }
+
+  /* city quick-pick chips — sits in the header, full width, scrolls sideways */
+  .citybar {
+    display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+    padding: 8px clamp(18px, 3vw, 32px); border-top: 1px solid var(--panel-border);
+    /* Room for one row of buttons (28px + padding + border) before renderCities() fills it, so
+       the map below doesn't jump down when the feed arrives. */
+    min-height: 45px;
+  }
+  .citybar::-webkit-scrollbar { display: none; }
+  .citybar button {
+    flex: 0 0 auto; padding: 6px 12px; border-radius: 8px;
+    background: transparent; border: 1px solid var(--border2);
+    color: var(--mute); font-family: inherit; font-size: 12.5px; font-weight: 600;
+    white-space: nowrap; cursor: pointer;
+    transition: background .15s var(--ease), color .15s var(--ease), border-color .15s var(--ease);
+  }
+  .citybar button:hover { color: var(--text); border-color: var(--border-strong-3); }
+  .citybar button.on {
+    background: var(--tint-lg); border-color: var(--border-strong); color: var(--text);
+  }
+
+  /* mobile-only Mapa / Lista switch */
+  .viewtoggle { display: none; }
+
+  .list {
+    flex: 1; overflow-y: auto; scroll-behavior: smooth;
+    scrollbar-width: thin; scrollbar-color: var(--border-strong-2) transparent;
+  }
+  .list::-webkit-scrollbar { width: 8px; }
+  .list::-webkit-scrollbar-track { background: transparent; }
+  .list::-webkit-scrollbar-thumb { background: var(--border-strong-2); border-radius: 4px; }
+  .list::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+  .ocard {
+    cursor: pointer;
+    padding: 17px clamp(20px, 2.4vw, 30px) 16px;
+    border-bottom: 1px solid var(--hair);
+    border-left: 2px solid transparent;
+    transition: background .18s var(--ease), border-left-color .18s var(--ease);
+  }
+  .ocard:hover { background: var(--sel-bg); }
+  .ocard.sel { border-left-color: var(--text); background: var(--sel-bg); }
+  .ocard .row1 { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; }
+  .ocard .street { font-size: 17.5px; font-weight: 600; letter-spacing: -.018em; line-height: 1.25; }
+  .ocard .time { flex: 0 0 auto; font-family: var(--mono); font-size: 14px; letter-spacing: -.02em; color: var(--time-text); white-space: nowrap; }
+  .ocard .row2 { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .ocard .kind { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+  .ocard .kind .d { width: 6px; height: 6px; border-radius: 50%; }
+  .ocard .sep { width: 1px; height: 11px; background: var(--sep); }
+  .ocard .town { font-size: 13px; font-weight: 600; color: var(--dim); white-space: nowrap; }
+  .ocard .src { font-size: 13px; color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* flex: none + nowrap - without them, a tight row2 (long source name, narrow sidebar) let the
+     flex item shrink below its content width and "u toku" wrapped onto two lines. */
+  .ocard .live { margin-left: auto; flex: none; white-space: nowrap; font-size: 12px; font-weight: 600; color: var(--live); letter-spacing: .02em; }
+
+  /* detail panel: 0fr -> 1fr animates to auto height */
+  .detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s var(--ease); }
+  .ocard.sel .detail { grid-template-rows: 1fr; }
+  .detail > .inner { overflow: hidden; }
+  .detail .pad { padding-top: 14px; }
+  .detail .headline { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 9px; }
+  .detail ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .detail li { display: flex; gap: 9px; font-size: 14.5px; color: var(--dim); line-height: 1.45; }
+  .detail li::before { content: ""; flex: 0 0 auto; width: 5px; height: 5px; margin-top: 8px; border-radius: 50%; background: var(--border-strong-4); }
+  .streets-full { margin-top: 10px; }
+  .streets-full-label { font-size: 12.5px; font-weight: 600; color: var(--mute); margin-bottom: 6px; }
+  .streets-full ul { gap: 4px; }
+  .streets-full li { font-size: 13.5px; }
+  .streets-full li::before { display: none; }
+  .detail .meta { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; font-size: 13px; color: var(--mute); }
+  .detail .meta a { font-weight: 600; }
+
+  .empty { padding: 34px clamp(20px, 2.4vw, 30px); font-size: 15.5px; color: var(--mute); line-height: 1.55; }
+  .empty button {
+    display: inline-block; margin-top: 12px; padding: 9px 14px; border-radius: 8px;
+    background: var(--ctrl-bg); border: 1px solid var(--border2); color: var(--text);
+    font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .empty button:hover { background: var(--ctrl-hover); }
+
+  .side-foot {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 16px clamp(20px, 2.4vw, 30px);
+    border-top: 1px solid var(--panel-border);
+    color: var(--text); font-size: 14.5px;
+    transition: background .18s var(--ease);
+  }
+  .side-foot:hover { background: var(--sel-bg); }
+  .side-foot .go { color: var(--link); font-weight: 600; }
+
+  .map-holder { position: relative; min-height: 0; }
+  #map { position: absolute; inset: 0; background: var(--sel-bg); }
+  .legend {
+    position: absolute; left: 18px; bottom: 18px; z-index: 400;
+    display: flex; gap: 18px; padding: 10px 14px; border-radius: 10px;
+    background: var(--panelfloat-a); border: 1px solid var(--border2); backdrop-filter: blur(8px);
+  }
+  .legend .item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--time-text); }
+  .legend .bar { width: 16px; height: 3px; border-radius: 2px; }
+  .locate {
+    position: absolute; right: 12px; top: 12px; z-index: 400;
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 13px; border-radius: 9px;
+    background: var(--panelfloat-b); border: 1px solid var(--border2); backdrop-filter: blur(8px);
+    color: var(--text); font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
+    transition: background .18s var(--ease);
+  }
+  .locate:hover { background: var(--panelfloat-c); }
+  .locate[disabled] { opacity: .55; cursor: default; }
+
+  /* Shown over the map area only when the basemap actually fails to load (script blocked, or
+     the tile/style host down) - see mapError() - so a broken map reads as "temporarily
+     unavailable", not a blank/grey hole where a map should be. Outage lines/shapes still draw
+     fine underneath (Leaflet itself never depended on the basemap loading), so this sits above
+     them as a dismissable note rather than replacing the whole map area. */
+  .map-error {
+    position: absolute; left: 50%; top: 16px; z-index: 450; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 10px;
+    max-width: min(92%, 420px);
+    padding: 10px 14px; border-radius: 10px;
+    background: var(--panelfloat-c); border: 1px solid var(--border2); backdrop-filter: blur(8px);
+    color: var(--dim); font-size: 13px; line-height: 1.4;
+  }
+  .map-error .icon { flex: none; font-size: 15px; }
+
+  /* While the basemap engine downloads (see loadBasemap()): a soft sweep over the empty map and
+     a small "Učitavam mapu…" pill. The outage shapes are already drawn on top. Removed the moment
+     the basemap's style is loaded, or replaced by .map-error if it never comes. */
+  .map-loading {
+    position: absolute; left: 50%; top: 16px; z-index: 450; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 999px;
+    background: var(--panelfloat-c); border: 1px solid var(--border2); backdrop-filter: blur(8px);
+    color: var(--dim); font-size: 13px; pointer-events: none;
+  }
+  .map-loading .dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--link);
+    animation: pulse 1.1s ease-in-out infinite;
+  }
+  .map-holder.basemap-pending #map {
+    background: linear-gradient(110deg, var(--sel-bg) 30%, var(--panelfloat-c) 50%, var(--sel-bg) 70%);
+    background-size: 250% 100%;
+    animation: sweep 1.6s linear infinite;
+  }
+  /* Outage shapes wait with the basemap and fade in together with it - dots floating on an empty
+     map read as broken. A failed basemap also clears basemap-pending, so the shapes still show
+     (under the "map unavailable" note) and the list never depends on any of this. */
+  .leaflet-tile-pane, .leaflet-overlay-pane, .leaflet-marker-pane, .leaflet-shadow-pane {
+    transition: opacity .35s var(--ease);
+  }
+  .map-holder.basemap-pending .leaflet-tile-pane,
+  .map-holder.basemap-pending .leaflet-overlay-pane,
+  .map-holder.basemap-pending .leaflet-marker-pane,
+  .map-holder.basemap-pending .leaflet-shadow-pane { opacity: 0; }
+  @keyframes sweep { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+  /* On a phone the top row is zoom + "Moja lokacija" - sit below them, not between. */
+  @media (max-width: 860px) { .map-loading { top: 64px; } }
+
+  /* Tuned for OpenFreeMap's dark style specifically - positron (the light style) is already
+     neutral and doesn't want the extra dimming. */
+  .leaflet-tile-pane { filter: brightness(.96); }
+  :root[data-theme="light"] .leaflet-tile-pane { filter: none; }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) .leaflet-tile-pane { filter: none; }
+  }
+  .leaflet-control-attribution { background: var(--attrfloat) !important; color: var(--mute) !important; font-size: 10px !important; padding: 2px 6px !important; }
+  .leaflet-control-attribution a { color: var(--dim) !important; }
+  .leaflet-bar { border: none !important; box-shadow: none !important; }
+  .leaflet-bar a { background: var(--ctrl-bg) !important; color: var(--text) !important; border-color: var(--border2) !important; }
+
+  /* outage popup */
+  .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+    background: var(--card-bg) !important; color: var(--text) !important;
+    border: 1px solid var(--border2); box-shadow: 0 10px 34px rgba(0,0,0,.5) !important;
+  }
+  .leaflet-popup-content-wrapper { border-radius: 12px; }
+  .leaflet-popup-content { margin: 12px 14px !important; font-family: inherit; line-height: 1.4; }
+  .leaflet-popup-content .pop-k { font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; font-weight: 700; }
+  .leaflet-popup-content .pop-s { font-size: 15px; font-weight: 600; margin-top: 3px; letter-spacing: -.01em; }
+  .leaflet-popup-content .pop-m { font-size: 12.5px; color: var(--mute); margin-top: 4px; }
+  .leaflet-popup-content .pop-m b { color: var(--live); font-weight: 600; }
+  .leaflet-popup-content .pop-sum { font-size: 13px; color: var(--dim); margin-top: 8px; }
+  .leaflet-popup-content a { display: inline-block; margin-top: 9px; font-size: 12.5px; font-weight: 600; }
+  /* Detalji is an in-page action (switches to Lista view), not a navigation link like "Zvanična
+     objava" right below it - same not-link-blue reasoning as .scope button above. Its own block
+     row + real padding (not just text) so the two don't crowd into two hard-to-tell-apart,
+     hard-to-tap targets on a phone. */
+  .leaflet-popup-content a.pop-details {
+    display: block; margin-top: 10px; padding: 7px 12px;
+    background: var(--ctrl-hover); border-radius: 8px; text-align: center;
+    color: var(--text); font-size: 13px;
+  }
+  .leaflet-popup-close-button { color: var(--mute) !important; }
+  a.leaflet-popup-close-button:hover { color: var(--text) !important; background: transparent !important; }
+
+  /* prijava */
+  #prijava {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: clamp(32px, 5vw, 80px); align-items: center;
+    max-width: 1180px; margin: 0 auto;
+    padding: clamp(64px, 8vw, 120px) clamp(20px, 4vw, 40px) clamp(56px, 6vw, 90px);
+  }
+  #prijava h2 { font-size: clamp(30px, 3.4vw, 46px); line-height: 1.08; letter-spacing: -.035em; margin-bottom: 18px; text-wrap: balance; }
+  #prijava .lede { font-size: 19px; line-height: 1.55; color: var(--dim); max-width: 26em; margin-bottom: 14px; text-wrap: pretty; }
+  #prijava .bot {
+    display: inline-block; margin-top: 18px; padding: 15px 24px; border-radius: 10px;
+    background: var(--text); color: var(--bg); font-size: 16.5px; font-weight: 600;
+    border: none; font-family: inherit; cursor: pointer;
+    transition: background .18s var(--ease), transform .18s var(--ease);
+  }
+  #prijava .bot:hover { background: var(--btn-hover); color: var(--bg); transform: translateY(-1px); }
+  #prijava .fine { margin-top: 16px; font-size: 14.5px; color: var(--mute); }
+
+  .sample { justify-self: center; width: 100%; max-width: 390px; }
+  .sample .cap { font-size: 12.5px; letter-spacing: .09em; text-transform: uppercase; font-weight: 600; color: var(--mute); margin-bottom: 14px; }
+  /* Filled in by renderThread() once the feed is in; its usual height is kept free from the
+     first paint, so the section doesn't grow and push the page down (Cloudflare's layout-shift
+     report named #prijava). */
+  #thread { min-height: 300px; }
+  /* The alert as it arrives (see renderThread()). */
+  .msg-card {
+    background: var(--card-bg); border: 1px solid var(--border2); border-radius: 16px;
+    overflow: hidden; animation: rise .4s var(--ease) both;
+  }
+  .msg-head { display: flex; align-items: center; gap: 11px; padding: 12px 16px; border-bottom: 1px solid var(--hair); }
+  .msg-av {
+    flex: none; width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center;
+    background: #101013; color: #F2F0EE; font-weight: 800; font-size: 16px;
+    box-shadow: inset 0 -3px 0 var(--voda);
+  }
+  .msg-from { display: flex; flex-direction: column; line-height: 1.25; }
+  .msg-from b { font-size: 14.5px; color: var(--text); }
+  .msg-from span { font-size: 12px; color: var(--mute); }
+  .msg-body { padding: 14px 16px 4px; font-size: 15px; line-height: 1.55; color: var(--bubble-text); }
+  .msg-body p { margin: 0 0 10px; }
+  .msg-body strong { color: var(--bubble-strong); }
+  .msg-body .msg-t { font-size: 13px; font-weight: 700; letter-spacing: .04em; color: var(--bubble-strong); margin-bottom: 6px; }
+  .msg-body .msg-sum { color: var(--dim); font-size: 14px; }
+  .msg-body a { color: var(--link); text-decoration: none; }
+  .msg-body a:hover { color: var(--link-hi); }
+  .msg-copy {
+    display: block; width: calc(100% - 20px); margin: 2px 10px 10px; padding: 10px 12px;
+    border-radius: 10px; border: 1px solid var(--border2); background: var(--ctrl-bg);
+    color: var(--text); font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: background .15s var(--ease);
+  }
+  .msg-copy:hover { background: var(--ctrl-hover); }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .sample .hint { margin-top: 16px; font-size: 13.5px; color: var(--mute); line-height: 1.5; }
+
+  /* cookie consent banner - see initCookieBanner(). Necessary-only cookies (the dashboard's
+     login session) need no consent gate under GDPR/ePrivacy, but the optional IP-location
+     personalization does - this banner is real, not decorative: rejecting/customizing actually
+     changes behaviour (see hasLocationConsent() gating load()'s auto-focus). */
+  .cookie-banner {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 1100;
+    display: flex; justify-content: center; padding: 16px;
+  }
+  .cookie-card {
+    width: 100%; max-width: 640px; background: var(--card-bg); border: 1px solid var(--border2);
+    border-radius: 16px; padding: 20px 22px; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  }
+  .cookie-text { font-size: 13.5px; line-height: 1.55; color: var(--dim); margin-bottom: 16px; }
+  .cookie-text a { font-weight: 600; }
+  .cookie-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .cookie-btn {
+    padding: 10px 16px; border-radius: 9px; border: none; cursor: pointer;
+    font-family: inherit; font-size: 13.5px; font-weight: 600;
+    transition: background .18s var(--ease), transform .18s var(--ease);
+  }
+  .cookie-btn.primary { background: var(--text); color: var(--bg); }
+  .cookie-btn.primary:hover { background: var(--btn-hover); transform: translateY(-1px); }
+  .cookie-btn.ghost { background: var(--ctrl-bg); border: 1px solid var(--border2); color: var(--text); }
+  .cookie-btn.ghost:hover { background: var(--ctrl-hover); }
+  .cookie-btn.block { width: 100%; margin-top: 4px; }
+  .cookie-detail { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--hair); }
+  .cookie-row {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+    padding: 10px 0; cursor: pointer;
+  }
+  .cookie-row span { display: flex; flex-direction: column; gap: 3px; font-size: 13.5px; color: var(--text); }
+  .cookie-row small { font-size: 12px; color: var(--mute); font-weight: 400; }
+  .cookie-row input { flex: none; width: 36px; height: 20px; margin-top: 2px; accent-color: var(--live); }
+
+  @media (max-width: 480px) {
+    .cookie-actions { flex-direction: column; }
+    .cookie-btn { width: 100%; }
+  }
+
+  /* izvori */
+  .sources { max-width: 1180px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 40px) clamp(64px, 7vw, 100px); }
+  .sources .head {
+    display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px;
+    padding-bottom: 14px; border-bottom: 1px solid var(--panel-border);
+  }
+  .sources .head h2 { font-size: 15px; letter-spacing: .09em; text-transform: uppercase; font-weight: 600; color: var(--mute); }
+  .sources .head span { font-size: 14.5px; color: var(--mute); }
+  .sources .src-row {
+    display: grid; grid-template-columns: 220px 1fr; gap: 10px 24px; align-items: start;
+    padding: 18px 2px; border-bottom: 1px solid var(--hair);
+  }
+  .sources .src-kind {
+    display: flex; align-items: center; gap: 10px; padding-top: 7px;
+    font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; color: var(--mute);
+  }
+  .sources .src-kind .d { flex: none; width: 7px; height: 7px; border-radius: 50%; }
+  .sources .src-names { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .sources .chip {
+    padding: 5px 12px; border-radius: 999px; border: 1px solid var(--border2);
+    font-size: 14.5px; font-weight: 600; color: var(--text); white-space: nowrap;
+  }
+  .sources .src-note { font-size: 14.5px; color: var(--mute); padding-left: 2px; }
+  .sources .src-more { display: inline-block; margin-top: 16px; font-size: 14.5px; color: var(--link); text-decoration: none; }
+  .sources .src-more:hover { color: var(--link-hi); }
+
+  /* Constrained to the same 1180px column as .sources and left-aligned - the old
+     justify-content:space-between across the full viewport scattered four chunks edge to edge
+     with dead space between them on any wide screen. Now: one quiet nav row, one fine-print
+     line, both starting at the same left edge as the content above. */
+  footer {
+    max-width: 1180px; margin: 0 auto;
+    padding: 22px clamp(20px, 4vw, 40px) 44px;
+    border-top: 1px solid var(--panel-border);
+    color: var(--mute);
+  }
+  footer .foot-nav {
+    display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: baseline;
+    font-size: 13px;
+  }
+  footer .foot-nav a { color: var(--dim); }
+  footer .foot-nav a:hover { color: var(--text); }
+  /* Secondary to .foot-nav on purpose (smaller, its own hairline) - a crawl path to every city
+     page for SEO (a link from the homepage ranks them faster than the sitemap alone), not
+     primary navigation a visitor is meant to scan first. */
+  footer .foot-cities {
+    display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline;
+    font-size: 12.5px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--hair);
+  }
+  footer .foot-cities .label { color: var(--mute); }
+  footer .foot-cities a { color: var(--dim); }
+  footer .foot-cities a:hover { color: var(--text); }
+  footer .foot-fine {
+    margin-top: 12px; max-width: 720px;
+    font-size: 12px; color: var(--mute); line-height: 1.6;
+  }
+
+  @media (max-width: 860px) {
+    header { position: static; }
+    .hrow { height: auto; padding: 10px 16px; gap: 8px 14px; }
+    .brand .tag { display: none; }
+    .hrow { flex-wrap: wrap; }
+    .hactions { gap: 10px; }
+    .dashlink { font-size: 12px; }
+    .cta { padding: 8px 12px; font-size: 13px; }
+    .citybar { padding: 8px 16px; }
+
+    .app { display: block; grid-template-columns: 1fr; height: auto; min-height: 0; }
+    aside { border: none; }
+
+    .viewtoggle {
+      display: flex; gap: 6px; padding: 8px 14px;
+      position: sticky; top: 0; z-index: 500;
+      background: var(--bg); border-bottom: 1px solid var(--panel-border);
+    }
+    .viewtoggle button {
+      flex: 1; padding: 9px; border-radius: 8px;
+      background: var(--card-bg); border: 1px solid var(--border2);
+      color: var(--dim); font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .viewtoggle button.on { background: var(--tint-xl); color: var(--text); border-color: var(--border-strong); }
+
+    .side-head { padding: 13px 16px 8px; }
+    .side-head h1 { font-size: 21px; }
+    .side-head p, .demo-note { display: none; }
+    .tabs { padding: 0 16px; gap: 18px; }
+    .scope { padding: 9px 16px; }
+    .list { max-height: none; }
+    .side-foot { padding: 14px 16px; }
+
+    /* Real complaint: on mobile the message preview and the footer links ran together into one
+       flat block. The preview is its own bordered card now (.msg-card); the footer keeps extra
+       breathing room and a heavier rule so the page clearly ends one section before the next. */
+    .sample { margin-top: 8px; }
+    footer { margin-top: 20px; border-top-width: 2px; }
+    .sources .src-row { grid-template-columns: 1fr; gap: 10px; padding: 16px 2px; }
+    .sources .src-kind { padding-top: 0; }
+    .sources .src-names { gap: 6px; }
+    .sources .chip { padding: 4px 10px; font-size: 13.5px; }
+    .sources .src-note { font-size: 13.5px; }
+
+    /* swap map <-> list */
+    .app[data-view="list"] .map-holder { display: none; }
+    .app[data-view="map"] .list,
+    .app[data-view="map"] .side-foot { display: none; }
+    .map-holder { height: 68vh; height: 68dvh; min-height: 340px; }
+  }
+</style>
+<link rel="stylesheet" href="/signup.css">
+</head>
+<body>
+
+<header id="top">
+  <div class="hrow">
+    <div class="brand">
+      <svg class="mark" width="22" height="22" viewBox="0 0 64 64" aria-hidden="true">
+        <rect width="64" height="64" rx="14" fill="#101013"/>
+        <rect x="27" y="13" width="10" height="27" rx="5" fill="#F2F0EE"/>
+        <circle cx="32" cy="48" r="6" fill="#5FAEE3"/>
+      </svg>
+      <span class="name">NajavaRadova<span class="tld">.rs</span></span>
+      <span class="tag" id="tag">najave radova i isključenja</span>
+    </div>
+    <div class="hactions pending" id="hactions">
+      <div class="theme-toggle" id="themeToggle" role="group" aria-label="Izgled stranice">
+        <button type="button" data-theme-choice="system" title="Sistem" aria-label="Sistem">🖥</button>
+        <button type="button" data-theme-choice="dark" title="Tamna tema" aria-label="Tamna tema">🌙</button>
+        <button type="button" data-theme-choice="light" title="Svetla tema" aria-label="Svetla tema">☀️</button>
+      </div>
+      <a class="dashlink mgrlink" href="/upravnici/">Za upravnike</a>
+      <a class="dashlink" href="https://app.najavaradova.rs/dashboard">Moja stranica</a>
+      <a class="cta" href="#prijava" id="ctaTop">
+        <span>Prijavi se za notifikacije</span>
+        <span class="arrow">→</span>
+      </a>
+    </div>
+  </div>
+  <div class="citybar" id="citybar"></div>
+</header>
+
+<button type="button" class="tomap" id="toMap" hidden><span>↑</span> Mapa</button>
+
+<section class="app" id="app" data-view="map">
+  <div class="viewtoggle" id="viewtoggle">
+    <button type="button" data-v="map" class="on">Mapa</button>
+    <button type="button" data-v="list">Lista <span id="vtCount"></span></button>
+  </div>
+  <aside>
+    <div class="side-head">
+      <div class="live-badge" id="badge"><span class="dot"></span><span id="badgeText">Uživo</span></div>
+      <h1 id="headline">Šaljemo ti poruku čim najave isključenje vode, struje ili grejanja na tvojoj adresi</h1>
+      <p>Pratimo zvanične najave u celoj Srbiji i pošaljemo ti poruku samo kad se neka od njih odnosi baš na tvoju ulicu i broj.</p>
+      <!-- Populated from JS only when the feed is serving sample data (meta.sample). Kept empty
+           in the static HTML so the demo disclaimer never leaks into Google's snippet - it was
+           showing up in search results even though live visitors never see it. -->
+      <div class="demo-note" id="demoNote" hidden></div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div class="scope" id="scope" hidden>
+      <span id="scopeText"></span>
+      <button type="button" id="scopeReset">Prikaži sve</button>
+    </div>
+    <div class="list" id="list"></div>
+    <a class="side-foot" href="#prijava" id="sideFootPrijava">
+      <span>Dobijaj poruku samo za svoju adresu</span>
+      <span class="go">Prijavi se</span>
+    </a>
+  </aside>
+  <div class="map-holder basemap-pending">
+    <div id="map" role="region" aria-label="Mapa najavljenih isključenja vode, struje i grejanja"></div>
+    <div class="map-loading" id="mapLoading" role="status">
+      <span class="dot"></span><span>Učitavam mapu…</span>
+    </div>
+    <div class="map-error" id="mapError" hidden>
+      <span class="icon">⚠️</span>
+      <span>Mapa trenutno nije dostupna. Lista najava dole i dalje radi.</span>
+    </div>
+    <button class="locate" id="locate" type="button">
+      <span>◎</span><span id="locateLabel">Moja lokacija</span>
+    </button>
+    <div class="legend">
+      <div class="item"><span class="bar" style="background:#5FAEE3"></span>Voda</div>
+      <div class="item"><span class="bar" style="background:#E0B05C"></span>Struja</div>
+      <div class="item"><span class="bar" style="background:#E08468"></span>Grejanje</div>
+    </div>
+  </div>
+</section>
+
+<section id="prijava">
+  <div>
+    <h2>Saznaj pre nego što ti nestane voda.</h2>
+    <p class="lede">Upišeš adresu jednom. Poruka stiže samo kad se najava tiče tvoje ulice, a kad
+      preduzeće navede brojeve &mdash; samo ako je tvoj broj među njima.</p>
+    <button type="button" class="bot" id="openForm">Prijavi se za notifikacije</button>
+    <div class="fine">Besplatno &middot; Telegram ili email &middot; odjava u jednoj poruci</div>
+    <a class="mgr-more" href="/upravnici/">Upravljate zgradama? Sve adrese odjednom &rarr;</a>
+  </div>
+  <div class="sample">
+    <div class="cap">Ovako izgleda poruka</div>
+    <div class="msg" id="thread"></div>
+    <div class="hint" id="threadHint">Primer iz liste najava. Klikni bilo koju najavu da vidiš njenu poruku.</div>
+  </div>
+</section>
+
+<section class="sources">
+  <div class="head">
+    <h2>Izvori koje pratimo</h2>
+    <span>Zvanične objave, provera na svakih 15 minuta</span>
+  </div>
+  <div id="providers"></div>
+  <a class="src-more" href="/grad/">Izvori za svaki grad &rarr;</a>
+</section>
+
+<footer id="siteFooter">
+  <nav class="foot-nav">
+    <a href="https://app.najavaradova.rs/dashboard">Moja stranica</a>
+    <a href="/upravnici/">Za upravnike zgrada</a>
+    <a href="/faq">Česta pitanja</a>
+    <a href="/vodic/iskljucenja-struje/">Vodiči</a>
+    <a href="/privacy">Politika privatnosti</a>
+    <a href="/terms">Uslovi korišćenja</a>
+    <a href="mailto:obavestenja@najavaradova.rs">Kontakt</a>
+  </nav>
+  <nav class="foot-cities" aria-label="Gradovi">
+    <span class="label">Gradovi:</span>
+    <a href="/danas/">Nestanak struje danas</a>
+    <a href="/grad/beograd/">Beograd</a>
+    <a href="/grad/novi-sad/">Novi Sad</a>
+    <a href="/grad/nis/">Niš</a>
+    <a href="/grad/kragujevac/">Kragujevac</a>
+    <a href="/grad/kraljevo/">Kraljevo</a>
+    <a href="/grad/cacak/">Čačak</a>
+    <a href="/grad/krusevac/">Kruševac</a>
+    <a href="/grad/pancevo/">Pančevo</a>
+    <a href="/grad/zrenjanin/">Zrenjanin</a>
+    <a href="/grad/leskovac/">Leskovac</a>
+    <a href="/grad/vranje/">Vranje</a>
+    <a href="/grad/valjevo/">Valjevo</a>
+    <a href="/grad/subotica/">Subotica</a>
+    <a href="/grad/sremska-mitrovica/">Sremska Mitrovica</a>
+    <a href="/grad/">Svi gradovi →</a>
+  </nav>
+  <p class="foot-fine">
+    NajavaRadova.rs je nezavisan servis i nije povezan sa komunalnim preduzećima.
+    Objave obrađujemo automatski &mdash; merodavna je uvek zvanična objava.
+    Podaci o ulicama: RGZ adresni registar.<br>
+    Autor i održavanje: <a href="https://koldan.dev">Branimir Koldan</a>
+  </p>
+</footer>
+
+<div class="cookie-banner" id="cookieBanner" hidden>
+  <div class="cookie-card">
+    <p class="cookie-text">
+      Koristimo samo neophodne kolačiće da bi prijava na tvoju stranicu radila. Uz tvoju dozvolu,
+      koristimo i približnu lokaciju (na osnovu IP adrese) da mapa odmah prikaže tvoj grad -
+      možeš je odbiti i mapa će prikazati celu Srbiju umesto toga.
+      <a href="/privacy" target="_blank" rel="noopener">Politika privatnosti</a>
+    </p>
+    <div class="cookie-actions">
+      <button type="button" class="cookie-btn ghost" id="cookieCustomize">Prilagodi</button>
+      <button type="button" class="cookie-btn ghost" id="cookieReject">Odbij</button>
+      <button type="button" class="cookie-btn primary" id="cookieAcceptAll">Prihvati sve</button>
+    </div>
+    <div class="cookie-detail" id="cookieDetail" hidden>
+      <label class="cookie-row">
+        <span><b>Neophodni</b><small>Uvek uključeno - bez ovoga prijava na tvoju stranicu ne bi radila.</small></span>
+        <input type="checkbox" checked disabled>
+      </label>
+      <label class="cookie-row">
+        <span><b>Lokacija i personalizacija</b><small>Automatsko centriranje mape na tvoj grad pri otvaranju sajta.</small></span>
+        <input type="checkbox" id="cookieLocationToggle">
+      </label>
+      <button type="button" class="cookie-btn primary block" id="cookieSaveChoice">Sačuvaj izbor</button>
+    </div>
+  </div>
+</div>
+
+<script src="/vendor/leaflet/leaflet.js"></script>
+<!-- MapLibre GL (basemap engine) + the Leaflet bridge that lets it sit under our existing
+     Leaflet map/markers/popups untouched: loaded later by loadBasemap(), not here. -->
+<script src="/signup.js"></script>
+<script>
+// Colours by kind — kept in sync with scripts/build_web_data.py
+var COLOR = { VODA: "#5FAEE3", STRUJA: "#E0B05C", GREJANJE: "#E08468", RADOVI: "#9AA0A6" };
+var LOSE = { VODA: "vode", STRUJA: "struje", GREJANJE: "grejanja" };
+var DAY_LABELS = ["Danas", "Sutra", "Prekosutra"];
+
+// Fallback shown when web/outages.json is missing or has no upcoming outages.
+// Same shape the generator emits, minus `paths` (these use a single `coords`).
+var SAMPLE = {
+  meta: { city: "Novi Sad", sample: true },
+  outages: [
+    { id:"o1", kind:"VODA", street:"Futoška 1-29", region:"Novi Sad", d:0, time:"08:30 - 11:30", live:true,
+      source:"ViK Novi Sad", summary:"Kvar na vodovodnoj mreži.",
+      effects:["Bez vode u navedenom periodu.","Moguć slab pritisak i u okolnim ulicama."],
+      coords:[[45.2497,19.8235],[45.2489,19.8291],[45.2478,19.8351]] },
+    { id:"o2", kind:"GREJANJE", street:"Cara Dušana 4-22", region:"Novi Sad", d:0, time:"07:00 - 18:00", live:true,
+      source:"Novosadska toplana", summary:"Planirani radovi na toplovodnoj mreži.",
+      effects:["Bez grejanja u navedenom periodu.","Bez tople vode."],
+      coords:[[45.2510,19.8180],[45.2521,19.8242],[45.2530,19.8300]] },
+    { id:"o3", kind:"VODA", street:"Jevrejska, parni brojevi 2-18", region:"Novi Sad", d:0, time:"12:00 - 16:00",
+      source:"ViK Novi Sad", summary:"Planirani radovi na vodovodnoj mreži.",
+      effects:["Bez vode u navedenom periodu."],
+      coords:[[45.2547,19.8420],[45.2558,19.8458],[45.2565,19.8490]] },
+    { id:"o4", kind:"STRUJA", street:"Bulevar Oslobođenja 76-104", region:"Novi Sad", d:1, time:"09:00 - 13:00",
+      source:"EPS Distribucija", summary:"Planirani radovi na elektro mreži.",
+      effects:["Bez struje u navedenom periodu."],
+      coords:[[45.2405,19.8380],[45.2500,19.8418],[45.2588,19.8455]] },
+    { id:"o5", kind:"STRUJA", street:"Temerinska i susedne ulice", region:"Novi Sad", d:1, time:"08:00 - 15:00",
+      source:"EPS Distribucija", summary:"Kvar na elektrodistributivnoj mreži.",
+      effects:["Bez struje u navedenom periodu."],
+      coords:[[45.2620,19.8480],[45.2662,19.8503],[45.2700,19.8520]] },
+    { id:"o6", kind:"VODA", street:"Veternik — celo naselje", region:"Novi Sad", d:1, time:"09:00 - 14:00",
+      source:"ViK Novi Sad", summary:"Planirani radovi na vodovodnoj mreži.",
+      effects:["Bez vode u navedenom periodu.","Voda će biti dostupna iz cisterni."],
+      coords:[[45.2600,19.7640],[45.2612,19.7780],[45.2540,19.7815],[45.2512,19.7690],[45.2600,19.7640]] },
+    { id:"o7", kind:"STRUJA", street:"Petrovaradin, Preradovićeva 1-45", region:"Novi Sad", d:2, time:"08:00 - 12:00",
+      source:"EPS Distribucija", summary:"Planirani radovi na elektro mreži.",
+      effects:["Bez struje u navedenom periodu."],
+      coords:[[45.2470,19.8660],[45.2452,19.8735],[45.2431,19.8802]] },
+    { id:"o8", kind:"VODA", street:"Sremska Kamenica, Karlovački put", region:"Novi Sad", d:2, time:"09:00 - 15:00",
+      source:"ViK Novi Sad", summary:"Kvar na vodovodnoj mreži.",
+      effects:["Bez vode u navedenom periodu.","Moguć slab pritisak i u okolnim ulicama."],
+      coords:[[45.2280,19.8390],[45.2242,19.8452],[45.2215,19.8531]] },
+    { id:"o9", kind:"GREJANJE", street:"Novo naselje, Bul. Slobodana Jovanovića", region:"Novi Sad", d:2, time:"07:00 - 17:00",
+      source:"Novosadska toplana", summary:"Kvar na toplovodnoj mreži.",
+      effects:["Bez grejanja u navedenom periodu.","Bez tople vode."],
+      coords:[[45.2452,19.7912],[45.2492,19.7955],[45.2531,19.7998]] }
+  ]
+};
+
+// "Izvori koje pratimo": one row per kind, one name per live scraper in main.py's SCRAPERS
+// (BVK's planned-works and kvarovi scrapers are one name). Hand-maintained; the water and
+// heating names are scripts/build_city_pages.py's CITY_SOURCES, and tests/test_home_sources.py
+// fails when the two drift apart. Power is EPS for the whole country.
+var PROVIDERS = [
+  { kind: "Struja", color: "--struja", names: ["EPS Distribucija"], note: "cela Srbija" },
+  { kind: "Voda", color: "--voda", names: ["BVK Beograd", "ViK Novi Sad", "JKP Naissus", "ViK Kragujevac",
+    "ViK Zrenjanin", "Vodovod Kruševac", "Vodovod Pančevo", "Vodovod Čačak", "Vodovod Kraljevo",
+    "Vodovod Leskovac", "Vodovod Vranje", "Vodovod Valjevo", "JP Kikinda", "Vodovod Šabac"] },
+  { kind: "Grejanje i topla voda", color: "--grejanje", names: ["Beogradske elektrane", "Novosadska toplana",
+    "Gradska toplana Niš", "Energetika Kragujevac", "Toplana Zrenjanin", "Toplana Kruševac"] }
+];
+
+// The UI is Latin; geocoder replies come back in Cyrillic.
+var CYR = { "Њ": "Nj", "Љ": "Lj", "Џ": "Dž", "њ": "nj", "љ": "lj", "џ": "dž",
+  "А": "A", "Б": "B", "В": "V", "Г": "G", "Д": "D", "Ђ": "Đ", "Е": "E", "Ж": "Ž",
+  "З": "Z", "И": "I", "Ј": "J", "К": "K", "Л": "L", "М": "M", "Н": "N", "О": "O",
+  "П": "P", "Р": "R", "С": "S", "Т": "T", "Ћ": "Ć", "У": "U", "Ф": "F", "Х": "H",
+  "Ц": "C", "Ч": "Č", "Ш": "Š",
+  "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "ђ": "đ", "е": "e", "ж": "ž",
+  "з": "z", "и": "i", "ј": "j", "к": "k", "л": "l", "м": "m", "н": "n", "о": "o",
+  "п": "p", "р": "r", "с": "s", "т": "t", "ћ": "ć", "у": "u", "ф": "f", "х": "h",
+  "ц": "c", "ч": "č", "ш": "š" };
+function toLatin(s) {
+  return (s || "").replace(/[Ѐ-ӿ]/g, function (ch) { return CYR[ch] || ch; });
+}
+
+var state = {
+  day: 0,
+  selected: null,
+  data: SAMPLE,
+  outages: [],
+  bounds: null,      // current map viewport; null = show everything
+  didFocus: false,   // first auto-focus (geolocation or fit-all) has happened
+  loaded: false      // load() has run at least once — until then, don't paint the live/demo badge
+};
+var map, layer, skipBoundsSync = false;
+var maplibreMap = null;   // set once initMap()'s basemap layer loads - see applyTheme()
+
+/* ---------- theme (sistem / tamna / svetla) ---------- */
+// Storage holds only "light" or "dark" - an explicit override. No stored value (or any other
+// value, e.g. a future "system" left over from an older build) means "follow the OS", same as
+// the anti-flash inline script in <head> which reads this same cookie before first paint.
+// A cookie, not localStorage - localStorage is per-origin, and this choice has to carry over to
+// app.najavaradova.rs (the dashboard) too. Real complaint: picking a theme here and having the
+// dashboard ignore it read as broken, not as two separate sites with their own settings.
+var THEME_COOKIE = "theme";
+var THEME_COOKIE_DOMAIN = "najavaradova.rs";   // visible to this origin and every subdomain
+var DARK_STYLE = "https://tiles.openfreemap.org/styles/dark";
+var LIGHT_STYLE = "https://tiles.openfreemap.org/styles/positron";
+var systemLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)");
+
+function storedTheme() {
+  try {
+    var m = document.cookie.match(/(?:^|; )theme=([^;]*)/);
+    var t = m ? decodeURIComponent(m[1]) : null;
+    return (t === "light" || t === "dark") ? t : null;
+  } catch (e) { return null; }
+}
+// value: "light"/"dark" writes the cookie for a year; null deletes it (back to "sistem").
+function writeStoredTheme(value) {
+  try {
+    var attrs = "; domain=" + THEME_COOKIE_DOMAIN + "; path=/; samesite=lax; secure";
+    document.cookie = THEME_COOKIE + "=" +
+      (value === null ? "" : encodeURIComponent(value)) +
+      (value === null ? "; max-age=0" : "; max-age=31536000") + attrs;
+  } catch (e) {}
+}
+function effectiveTheme() {
+  return storedTheme() || (systemLight && systemLight.matches ? "light" : "dark");
+}
+function updateThemeToggleUI() {
+  var stored = storedTheme();
+  var choice = stored || "system";
+  var btns = document.querySelectorAll("#themeToggle button");
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].classList.toggle("on", btns[i].dataset.themeChoice === choice);
+  }
+}
+function applyBasemapForTheme() {
+  if (!maplibreMap) return;   // basemap not loaded yet (or failed) - initMap() picks the right one at load
+  maplibreMap.setStyle(effectiveTheme() === "light" ? LIGHT_STYLE : DARK_STYLE);
+}
+// choice: "system" (clear the override), "light" or "dark" (pin it regardless of the OS).
+function setTheme(choice) {
+  writeStoredTheme(choice === "system" ? null : choice);
+  if (choice === "system") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", choice);
+  updateThemeToggleUI();
+  applyBasemapForTheme();
+}
+function wireThemeToggle() {
+  var btns = document.querySelectorAll("#themeToggle button");
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].onclick = function () { setTheme(this.dataset.themeChoice); };
+  }
+  updateThemeToggleUI();
+  // Visitor never touched the toggle (no stored choice) - if the OS theme flips while the tab
+  // is open, follow it live, same as the CSS's own prefers-color-scheme media query already does
+  // for every other color on the page.
+  if (systemLight && systemLight.addEventListener) {
+    systemLight.addEventListener("change", function () { if (!storedTheme()) applyBasemapForTheme(); });
+  }
+}
+wireThemeToggle();
+
+function el(tag, cls, html) {
+  var e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (html != null) e.innerHTML = html;
+  return e;
+}
+function esc(s) {
+  // Covers single quotes too: several sinks below interpolate esc() output into
+  // single-quoted HTML attributes (href='...', style='...'), and o.sourceUrl is a
+  // third-party URL scraped from a utility page - a stray ' would otherwise break out.
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+// Every outage ends up with `paths` (standalone street lines) and `areas` (one shape per
+// distinct settlement — a filled hull, or a dot for a village-scale one — plus a pin per single
+// house an announcement names by number; see
+// scripts/build_web_data.py's extract_shapes for why these stay separate instead of one
+// shape per outage).
+function normalize(o) {
+  var n = Object.assign({}, o);
+  n.paths = o.paths || (o.coords ? [o.coords] : []);
+  n.labels = o.labels || [];
+  n.pathLabel = o.pathLabel || [];
+  n.areas = o.areas || [];
+  // One notice naming places far apart comes as one card per place (o.part = [k, n], same id):
+  // `key` tells the cards apart for selecting.
+  n.key = o.part ? o.id + "/" + o.part[0] : o.id;
+  // Side streets of "i okolne ulice" (paths[i] for i in o.maybe): drawn dashed, "maybe".
+  n.maybe = {};
+  (o.maybe || []).forEach(function (i) { n.maybe[i] = true; });
+  n.color = COLOR[o.kind] || COLOR.RADOVI;
+  n.effects = o.effects || [];
+  return n;
+}
+
+// Every point belonging to an outage — its street lines AND its area shapes — for
+// bounds/fit maths that must not miss a shape just because it's an area, not a line.
+function allShapePoints(o) {
+  var pts = o.paths.slice();
+  o.areas.forEach(function (a) {
+    if (a.hull) pts.push(a.hull);
+    else if (a.dot) pts.push([a.dot]);
+    else if (a.pin) pts.push([a.pin]);
+  });
+  return pts;
+}
+
+function boundsOf(o) {
+  if (!o._b && window.L) {
+    var pts = [];
+    allShapePoints(o).forEach(function (p) { pts = pts.concat(p); });
+    o._b = pts.length ? L.latLngBounds(pts) : null;
+  }
+  return o._b;
+}
+
+// All outages for the active day tab, ignoring the viewport.
+function dayList() {
+  return state.outages.filter(function (o) { return o.d === state.day; });
+}
+// What the list actually renders: day tab AND inside the current viewport.
+function visible() {
+  return dayList().filter(function (o) {
+    if (!state.bounds) return true;
+    var b = boundsOf(o);
+    return b ? state.bounds.intersects(b) : true;
+  });
+}
+
+function points(list) {
+  var pts = [];
+  list.forEach(function (o) { allShapePoints(o).forEach(function (p) { pts = pts.concat(p); }); });
+  return pts;
+}
+
+/* ---------- rendering ---------- */
+
+function renderTabs() {
+  var box = document.getElementById("tabs");
+  box.innerHTML = "";
+  DAY_LABELS.forEach(function (label, i) {
+    var n = state.outages.filter(function (o) { return o.d === i; }).length;
+    var b = el("button", "tab" + (state.day === i ? " active" : ""),
+      "<span>" + label + "</span><span class='n'>" + n + "</span>");
+    b.onclick = function () {
+      state.day = i;
+      state.selected = null;
+      // Keep the current map view and viewport filter - switching days should just change
+      // WHICH outages are shown, not fling the map back out to the whole country. If nothing
+      // for the new day falls in view, renderScope()'s "Prikaži sve" is the way back out.
+      render();
+    };
+    box.appendChild(b);
+  });
+}
+
+// The town shown in the "Uživo · …" badge follows the map centre. Best source
+// is the reverse-geocoded tile centre (works even where there are no outages);
+// The town in the "Uživo · …" badge is the nearest known city to the map centre.
+// While "Prikaži sve" is active (no viewport filter) it just reads "Srbija".
+function currentCity() {
+  var meta = state.data.meta || {};
+  if (meta.sample) return meta.city || "Srbija";
+  if (!state.bounds || !map) return "Srbija";
+  var c = map.getCenter();
+  var city = nearestCity(c.lat, c.lng, 35);
+  return city ? city.name : (meta.city || "Srbija");
+}
+
+function renderHeadline() {
+  var meta = state.data.meta || {};
+  var city = currentCity();
+  // Until load() has run once, the map's own init fires a moveend -> render() while state.data
+  // is still the inline SAMPLE. Painting the badge then flashed a yellow "Demo prikaz" for a
+  // frame before the real feed arrived. Hold the badge (and the demo note) back until there's
+  // actually data to describe.
+  var demo = state.loaded && !!meta.sample;
+  var badge = document.getElementById("badge");
+  badge.hidden = !state.loaded;
+  // Never dress the built-in examples up as live announcements.
+  badge.classList.toggle("demo", demo);
+  // The live count moved here from the headline (see the note below) - same number the active
+  // day tab already shows, just paired with the live-status badge instead of standing in as the
+  // page's whole headline.
+  var dan = (DAY_LABELS[state.day] || "Danas").toLowerCase();
+  var n = state.outages.filter(function (o) { return o.d === state.day; }).length;
+  var countTxt = (!demo && n) ? (" · " + n + " " + najaveWord(n) + " " + dan) : "";
+  document.getElementById("badgeText").textContent =
+    (demo ? "Demo prikaz · " + city : "Uživo · " + city) + countTxt;
+  var demoNote = document.getElementById("demoNote");
+  // Text lives here, not in the static HTML, so it can't be scraped into Google's snippet.
+  demoNote.textContent = demo
+    ? "Ovo su primeri, ne stvarne najave. Servis je u pripremi — čim krenu zvanične objave, ovde će stajati pravi podaci."
+    : "";
+  demoNote.hidden = !demo;
+  // The headline used to be overwritten here with a bare count ("23 najave danas") - the exact
+  // shape of a statistics page, not a notification service, and it's what most real visitors
+  // saw within a second of the page loading since this runs on every render. The headline is
+  // left alone now and always states what the service actually does; the count moved up into
+  // the live badge above instead, where it reads as a live stat next to "Uživo" rather than as
+  // the page's whole point.
+}
+
+// Serbian numeric agreement for "najava" (fem.): 1/21/31 -> "najava", 2-4/22-24 -> "najave",
+// 0 and 5-20 (incl. the 11-14 teens) -> "najava".
+function najaveWord(n) {
+  var t = n % 100, u = n % 10;
+  if (u === 1 && t !== 11) return "najava";
+  if (u >= 2 && u <= 4 && (t < 12 || t > 14)) return "najave";
+  return "najava";
+}
+
+function renderScope() {
+  var bar = document.getElementById("scope");
+  var total = dayList().length, shown = visible().length;
+  if (state.bounds && shown < total) {
+    bar.hidden = false;
+    var where = currentCity();
+    document.getElementById("scopeText").textContent = "Prikazano " + shown + " od " + total +
+      (where && where !== "Srbija" ? " · " + where : " u vidljivom delu mape");
+  } else {
+    bar.hidden = true;
+  }
+}
+
+function renderList() {
+  var box = document.getElementById("list");
+  box.innerHTML = "";
+  var rows = visible();
+  var vt = document.getElementById("vtCount");
+  if (vt) vt.textContent = "(" + rows.length + ")";
+
+  if (!rows.length) {
+    var total = dayList().length;
+    var msg = total
+      ? "Nema najava u ovom delu mape.<br>Za ovaj dan ih ukupno ima " + total + "."
+      : "Za ovaj dan nema najavljenih radova.";
+    var box2 = el("div", "empty", msg);
+    if (total) {
+      var b = el("button", null, "Prikaži sve");
+      b.onclick = resetScope;
+      box2.appendChild(b);
+    }
+    box.appendChild(box2);
+    return;
+  }
+
+  rows.forEach(function (o) {
+    var sel = state.selected === o.key;
+    var card = el("div", "ocard" + (sel ? " sel" : ""));
+    var effects = o.effects.map(function (e) { return "<li>" + esc(e) + "</li>"; }).join("");
+    // row1's o.street is truncated to "<first 3> +N" (see street_label() in build_web_data.py) -
+    // when there's more than that, the full list (o.streets) goes in the already-expandable
+    // .detail panel below, so clicking the card (the existing select/expand interaction, see
+    // card.onclick right below and .ocard.sel .detail's CSS) reveals the rest instead of the
+    // "+2" being a dead end.
+    // Show the full, number-qualified list whenever it says more than the collapsed headline:
+    // more than one street, or a single street that carries house numbers (o.streets[0] then
+    // differs from o.street, which is always stripped of numbers). Previously gated at >3, so a
+    // 1-3 street outage never surfaced the numbers the announcement gave.
+    var hasMore = o.streets && o.streets.length &&
+      (o.streets.length > 1 || o.streets[0] !== o.street);
+    var listLabel = (o.streets && o.streets.length === 1) ? "Detalji:" : "Sve zahvaćene ulice:";
+    var moreStreets = hasMore
+      ? "<div class='streets-full'><div class='streets-full-label'>" + listLabel + "</div>" +
+        "<ul>" + o.streets.map(function (s) { return "<li>" + esc(s) + "</li>"; }).join("") + "</ul></div>"
+      : "";
+    card.innerHTML =
+      "<div class='row1'>" +
+        "<span class='street'>" + esc(o.street) + "</span>" +
+        (o.time ? "<span class='time'>" + esc(o.time) + "</span>" : "") +
+      "</div>" +
+      "<div class='row2'>" +
+        "<span class='kind' style='color:" + o.color + "'>" +
+          "<span class='d' style='background:" + o.color + "'></span>" + esc(o.kind) +
+        "</span>" +
+        (o.region ? "<span class='sep'></span><span class='town'>" + esc(o.region) + "</span>" : "") +
+        (o.source && o.source !== o.region ? "<span class='sep'></span><span class='src'>" + esc(o.source) + "</span>" : "") +
+        (o.live ? "<span class='live'>u toku</span>" : "") +
+      "</div>" +
+      "<div class='detail'><div class='inner'><div class='pad'>" +
+        (o.summary ? "<div class='headline'>" + esc(o.summary) + "</div>" : "") +
+        (effects ? "<ul>" + effects + "</ul>" : "") +
+        moreStreets +
+        (o.maybe && Object.keys(o.maybe).length
+          ? "<div class='streets-full-label'>Isprekidano na mapi: okolne ulice, moguće bez " +
+            esc(LOSE[o.kind] || "usluge") + ". Objava ih ne navodi.</div>" : "") +
+        "<div class='meta'>" +
+          (o.part ? "<span>Mesto " + o.part[0] + " od " + o.part[1] + " iz iste objave</span>" : "") +
+          (o.region ? "<span>" + esc(o.region) + "</span>" : "") +
+          (o.date ? "<span>" + esc(o.date) + "</span>" : "") +
+          (o.sourceUrl ? "<a href='" + esc(o.sourceUrl) + "' target='_blank' rel='noopener'>Zvanična objava ↗</a>" : "") +
+        "</div>" +
+      "</div></div></div>";
+    card.onclick = function (ev) {
+      if (ev.target.closest("a")) return;   // let the source link through
+      select(o.key === state.selected ? null : o);
+    };
+    box.appendChild(card);
+  });
+}
+
+// The message preview under the map: one notice, laid out like the real alert
+// (workers/telegram_worker.py: "⚠️ OBAVEŠTENJE:", the text, the official post, the share
+// button). The text follows core/matchmaker.py's fallback wording, built from the notice's own
+// facts, for the first street it names - a real alert names the recipient's own street.
+var MSG_BASE = {
+  VODA: "Planirano isključenje vode", STRUJA: "Planirano isključenje struje",
+  GREJANJE: "Planirani prekid u isporuci toplotne energije", RADOVI: "Najavljeni radovi"
+};
+var MSG_FAULT = {
+  VODA: "Isključenje vode zbog kvara", STRUJA: "Isključenje struje zbog kvara",
+  GREJANJE: "Prekid u isporuci toplotne energije zbog kvara"
+};
+var SHARE_LABEL = "📤 Pošalji komšijama";                   // core/notice.share_notice
+var SHARE_SIGNATURE = "Obaveštenje preko najavaradova.rs";  // core/notice.PERSONAL_SIGNATURE
+// Before the feed arrives (and if it never does).
+var MSG_EXAMPLE = { kind: "VODA", streets: ["Futoška 1-29"], time: "08:30 - 11:30" };
+
+// [text, bold] pieces of the alert sentence, so the card and the copied text never differ.
+function messagePieces(o) {
+  var fault = /kvar/i.test(o.summary || "") && MSG_FAULT[o.kind];
+  var street = (o.streets && o.streets[0]) || o.street || "";
+  var p = [[(fault || MSG_BASE[o.kind] || "Planirano isključenje") + (street ? " u ulici " : ""), false]];
+  if (street) p.push([street, true]);
+  var date = (o.date || "").trim();
+  if (date) p.push([/[–-]/.test(date) ? ", " + date : " dana " + date, false]);
+  var time = (o.time || "").trim();
+  if (time === "ceo dan") p.push([", ceo dan", false]);
+  else if (time) { p.push([" u periodu ", false]); p.push([time, true]); }
+  if (!/\.$/.test(p[p.length - 1][0])) p.push([".", false]);
+  return p;
+}
+
+function renderThread() {
+  var thread = document.getElementById("thread");
+  var hint = document.getElementById("threadHint");
+  // A multi-day outage is emitted once per day-tab it covers (same id, different .d), so pick
+  // the copy for the tab we're on. Nothing clicked: the example already shown while it is still
+  // in the list (so panning the map doesn't swap it), else the list's first notice.
+  var picks = state.outages.filter(function (x) { return x.key === state.selected; });
+  var chosen = picks.filter(function (x) { return x.d === state.day; })[0] || picks[0];
+  var o = chosen;
+  if (!o && state.loaded) {
+    var inList = visible();
+    var shown = state.outages.filter(function (x) { return x.key + ":" + x.d === thread.dataset.key; })[0];
+    o = (shown && (!inList.length || inList.indexOf(shown) >= 0)) ? shown
+      : (inList[0] || dayList()[0] || state.outages[0]);
+  }
+  o = o || MSG_EXAMPLE;
+  var key = (o.id == null ? "example" : o.key + ":" + o.d);
+  if (thread.dataset.key === key) return;   // map moves re-render: don't replay the animation
+  thread.dataset.key = key;
+
+  var pieces = messagePieces(o);
+  var html = pieces.map(function (x) { return x[1] ? "<strong>" + esc(x[0]) + "</strong>" : esc(x[0]); }).join("");
+  var text = pieces.map(function (x) { return x[0]; }).join("");
+  var summary = o.summary && o.summary.length <= 140 ? o.summary : "";
+  thread.innerHTML =
+    "<div class='msg-card'>" +
+      "<div class='msg-head'><span class='msg-av' aria-hidden='true'>!</span>" +
+        "<span class='msg-from'><b>NajavaRadova</b><span>Telegram ili email</span></span></div>" +
+      "<div class='msg-body'>" +
+        "<p class='msg-t'>⚠️ OBAVEŠTENJE:</p>" +
+        "<p>" + html + "</p>" +
+        (summary ? "<p class='msg-sum'>" + esc(summary) + "</p>" : "") +
+        (o.sourceUrl ? "<p>🔗 <a href='" + esc(o.sourceUrl) + "' target='_blank' rel='noopener nofollow'>" +
+          "Zvanična objava" + (o.source ? " &middot; " + esc(o.source) : "") + "</a></p>" : "") +
+      "</div>" +
+      "<button type='button' class='msg-copy'>" + SHARE_LABEL + "</button>" +
+    "</div>";
+
+  // The same one-tap share as in Telegram: the text, ready to paste into a Viber group.
+  var btn = thread.querySelector(".msg-copy");
+  btn.onclick = function () {
+    try {
+      navigator.clipboard.writeText(text + "\n\n" + SHARE_SIGNATURE).then(function () {
+        btn.textContent = "✓ Kopirano, nalepi u grupu";
+        setTimeout(function () { btn.textContent = SHARE_LABEL; }, 2000);
+      }, function () {});
+    } catch (err) {}
+  };
+
+  hint.textContent = chosen
+    ? "Poruka za najavu: " + ((o.streets && o.streets[0]) || o.street) + ". Klikni drugu najavu da promeniš primer."
+    : "Primer iz liste najava. Klikni bilo koju najavu da vidiš njenu poruku.";
+}
+
+// One row per kind; a new source is one more name in its row, not a new row.
+function renderProviders() {
+  var box = document.getElementById("providers");
+  PROVIDERS.forEach(function (p) {
+    box.appendChild(el("div", "src-row",
+      "<div class='src-kind'><span class='d' style='background:var(" + p.color + ")'></span>" + esc(p.kind) + "</div>" +
+      "<div class='src-names'>" +
+        p.names.map(function (n) { return "<span class='chip'>" + esc(n) + "</span>"; }).join("") +
+        (p.note ? "<span class='src-note'>" + esc(p.note) + "</span>" : "") +
+      "</div>"));
+  });
+}
+
+// `label`: the address of the one piece that was clicked ("Rankeova 2, 3" - see labels /
+// pathLabel in scripts/build_web_data.py). Without one, the announcement's own street line.
+function popupHtml(o, label) {
+  // On a phone the map covers the list (see the mobile Mapa/Lista switch), so a tap on the map
+  // only ever gets this small popup - no room here for the full number-qualified street list
+  // (see the .streets-full block in renderList()) without turning a quick-glance popup into a
+  // dialog. Instead: a "Detalji" link that jumps to the Lista view, where the shape's click
+  // handler (see drawLines()'s select(o, {soft:true}) call, which already ran before this popup
+  // opened) has already expanded that exact card - showDetails() just has to reveal it and
+  // scroll it into view. Desktop already shows the sidebar list alongside the map, so this link
+  // would be redundant there - shown on phone only.
+  var detailsLink = isPhone()
+    ? "<a href='#' class='pop-details' onclick='showDetails(); return false;'>Detalji &rarr;</a>"
+    : "";
+  // Single named street with house numbers -> show the number-qualified form here too; the
+  // headline o.street is always stripped of numbers. Multi-street stays as the "+N" label
+  // (no room in the bubble - the sidebar list carries the full breakdown).
+  var popStreet = label || ((o.streets && o.streets.length === 1 && o.streets[0] !== o.street)
+    ? o.streets[0] : o.street);
+  return "<div class='pop'>" +
+    "<div class='pop-k' style='color:" + o.color + "'>" + esc(o.kind) + "</div>" +
+    "<div class='pop-s'>" + esc(popStreet) + "</div>" +
+    "<div class='pop-m'>" + esc(o.region || "") + (o.time ? " &middot; " + esc(o.time) : "") +
+      (o.live ? " &middot; <b>u toku</b>" : "") + "</div>" +
+    (o.summary ? "<div class='pop-sum'>" + esc(o.summary) + "</div>" : "") +
+    detailsLink +
+    (o.sourceUrl ? "<a href='" + esc(o.sourceUrl) + "' target='_blank' rel='noopener'>Zvanična objava &#8599;</a>" : "") +
+  "</div>";
+}
+
+function showDetails() {
+  setView("list");
+  var card = document.querySelector(".ocard.sel");
+  if (card) card.scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
+function drawLines() {
+  if (!map || !window.L) return;
+  if (layer) layer.remove();
+  layer = L.layerGroup().addTo(map);
+  var popOpts = { closeButton: true, autoPan: true, maxWidth: 250, offset: [0, -2] };
+  // Draw the whole day, not just the in-viewport subset: lines at the edge of
+  // the screen should stay on the map as you pan toward them.
+  dayList().forEach(function (o) {
+    var sel = state.selected === o.key;
+    function wire(shape, label) {
+      shape.bindPopup(popupHtml(o, label), popOpts).on("click", function () { select(o, { soft: true }); });
+    }
+    // One soft filled shape per distinct settlement, not a tangle of streets and never
+    // more than one settlement merged into a single blob (see allShapePoints/extract_shapes).
+    // A village-scale settlement draws as a small dot instead — several real nearby villages
+    // in one announcement as filled shapes overlap into an unreadable tangle; dots don't.
+    o.areas.forEach(function (a) {
+      // One house (see extract_shapes): a solid dot on the building, with the same wide soft
+      // tap target the street lines get.
+      if (a.pin) {
+        // A fault at this house that may reach the streets around it (BVK: "у наведеним и
+        // околним улицама"): a soft dashed ring of a.ring metres - the same circle whose
+        // subscribers are told it may reach them (core/matchmaker._queue_nearby).
+        if (a.ring) {
+          wire(L.circle(a.pin, {
+            radius: a.ring, color: o.color, weight: sel ? 2 : 1.5, opacity: sel ? .8 : .5,
+            dashArray: "4 6", fillColor: o.color, fillOpacity: sel ? .12 : .06
+          }).addTo(layer), a.label);
+        }
+        wire(L.circleMarker(a.pin, {
+          radius: sel ? 15 : 12, stroke: false, fillColor: o.color, fillOpacity: sel ? .2 : .12
+        }).addTo(layer), a.label);
+        L.circleMarker(a.pin, {
+          radius: sel ? 6.5 : 5, color: "#fff", weight: 1.5, opacity: .9,
+          fillColor: o.color, fillOpacity: 1, interactive: false
+        }).addTo(layer);
+        return;
+      }
+      if (a.dot) {
+        wire(L.circleMarker(a.dot, {
+          radius: sel ? 8 : 6, color: o.color, weight: sel ? 2.5 : 2, opacity: sel ? 1 : .85,
+          fillColor: o.color, fillOpacity: sel ? .55 : .4
+        }).addTo(layer));
+        return;
+      }
+      if (!a.hull || a.hull.length < 3) return;
+      wire(L.polygon(a.hull, {
+        color: o.color, weight: sel ? 2 : 1.5, opacity: sel ? .9 : .5,
+        fillColor: o.color, fillOpacity: sel ? .2 : .1, lineJoin: "round"
+      }).addTo(layer));
+    });
+    o.paths.forEach(function (path, i) {
+      // A side street of "i okolne ulice": nobody named it, so it may or may not be cut -
+      // dotted, and the popup says so.
+      var maybe = o.maybe[i];
+      var label = o.labels[o.pathLabel[i]];
+      if (maybe && label) label += " (okolna ulica, moguće)";
+      // Wide, near-invisible tap target so a thin street line is easy to hit on
+      // a phone — also doubles as a soft glow.
+      wire(L.polyline(path, { color: o.color, weight: sel ? 30 : 22, opacity: sel ? .16 : (maybe ? .06 : .1), lineCap: "round" }).addTo(layer),
+           label);
+      L.polyline(path, maybe
+        ? { color: o.color, weight: sel ? 6 : 4.5, opacity: sel ? .95 : .75, dashArray: "2 10", lineCap: "round", interactive: false }
+        : { color: o.color, weight: sel ? 7 : 4, opacity: sel ? 1 : .82, lineCap: "round", interactive: false }).addTo(layer);
+    });
+  });
+}
+
+function render() {
+  renderTabs();
+  renderHeadline();
+  renderCities();
+  renderScope();
+  renderList();
+  renderThread();
+  drawLines();
+}
+
+/* ---------- city quick-pick ---------- */
+
+var MAJOR = ["Beograd", "Novi Sad", "Niš", "Kragujevac", "Subotica",
+             "Kruševac", "Zrenjanin", "Čačak", "Kraljevo", "Pančevo"];
+
+function renderCities() {
+  var box = document.getElementById("citybar");
+  if (!box) return;
+  box.innerHTML = "";
+  var here = currentCity();
+  var all = el("button", state.bounds ? "" : "on", "Cela Srbija");
+  all.onclick = resetScope;
+  box.appendChild(all);
+  MAJOR.forEach(function (name) {
+    var b = el("button", (state.bounds && here === name) ? "on" : "", name);
+    b.onclick = function () { focusCity(name); };
+    box.appendChild(b);
+  });
+}
+
+function focusCity(name) {
+  var c = null;
+  for (var i = 0; i < CITIES.length; i++) if (CITIES[i].name === name) c = CITIES[i];
+  if (!c || !map) return;
+  state.selected = null;
+  if (isPhone()) setView("map");
+  focusUser(c.lat, c.lng, false);
+  setLocateLabel(name);
+}
+
+/* ---------- mobile view switch ---------- */
+
+function isPhone() { return window.matchMedia("(max-width: 860px)").matches; }
+
+function setView(v) {
+  var app = document.getElementById("app");
+  if (app) app.setAttribute("data-view", v);
+  var btns = document.querySelectorAll("#viewtoggle button");
+  for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("on", btns[i].dataset.v === v);
+  if (v === "map" && map) setTimeout(function () { map.invalidateSize(); }, 60);
+}
+
+/* ---------- map ---------- */
+
+// Programmatic moves must not re-filter the list, otherwise clicking a card
+// zooms the map and then hides every other card as a side effect.
+// Forced true, not just the prefers-reduced-motion check - an animated flyTo/flyToBounds fetches
+// tiles at every intermediate zoom/pan frame along the flight, not just the final view, and that
+// was very likely a real contributor to the tile-quota burn (every day-tab click, city chip,
+// card click, and page load used to animate). Instant jumps only need tiles for where you land.
+// Revert to the matchMedia check once tiles are cached/self-hosted and this stops being scary.
+var reduceMotion = true;
+
+// `sync` = once the move settles, adopt the new viewport as the list filter.
+// Without it the guard just lifts and state.bounds is left untouched (used for
+// "show everything" moves, where state.bounds is deliberately null).
+function fit(list, maxZoom, pad, sync) {
+  if (!map || !window.L) return;
+  var pts = points(list);
+  if (!pts.length) return;
+  var b = L.latLngBounds(pts).pad(pad == null ? 0.18 : pad);
+  var opts = { maxZoom: maxZoom || 15 };
+  // `sync`: "clear" -> drop the filter on settle, truthy -> adopt the new view.
+  beginProgrammaticMove();
+  var done = false;
+  function settle() {
+    if (done) return;
+    done = true;
+    endProgrammaticMove();
+    if (sync === "clear") { state.bounds = null; render(); }
+    else if (sync) syncBounds();
+  }
+  map.once("moveend", settle);
+  setTimeout(settle, 2500);   // fallback: map was already at these bounds
+  if (!reduceMotion && map.flyToBounds) {
+    opts.duration = 0.6;
+    map.flyToBounds(b, opts);
+  } else {
+    map.fitBounds(b, opts);
+  }
+}
+
+function syncBounds() {
+  if (skipBoundsSync || !map) return;
+  // Leaflet auto-watches its container's size (ResizeObserver) and can fire a spurious
+  // moveend/zoomend when that size changes - including collapsing to 0 the moment mobile's
+  // List view hides .map-holder via display:none (see the mobile media query above).
+  // Trusting getBounds() from a hidden, zero-size map produces a degenerate bounds that
+  // filters every real outage out of visible() - confirmed real report: switch to List,
+  // leave it a while, it settles into "nema najava" even though the day tab's own count says
+  // otherwise. Nothing meaningful actually moved, so bail out and leave state.bounds/the list
+  // exactly as they were rather than resyncing against a bogus size.
+  if (document.getElementById("app").getAttribute("data-view") === "list") return;
+  state.bounds = map.getBounds();
+  renderHeadline();   // "Uživo · …" follows the nearest city to the map centre
+  renderCities();
+  renderScope();
+  renderList();
+}
+
+// Programmatic map moves (fit / focusUser) suspend viewport syncing so a
+// half-finished animation frame can't be adopted as the filter. Nesting-safe:
+// the listener only comes back once every in-flight move has settled.
+var moveDepth = 0;
+function beginProgrammaticMove() {
+  if (moveDepth++ === 0) { skipBoundsSync = true; map.off("moveend zoomend", syncBounds); }
+}
+function endProgrammaticMove() {
+  if (--moveDepth <= 0) {
+    moveDepth = 0;
+    skipBoundsSync = false;
+    map.off("moveend zoomend", syncBounds);
+    map.on("moveend zoomend", syncBounds);
+  }
+}
+
+function resetScope() {
+  state.bounds = null;
+  render();
+  fit(dayList(), null, null, "clear");
+}
+
+// opts.soft = triggered by tapping the line on the map: skip the full render()
+// (rebuilding the map layer mid-click would kill the popup Leaflet is opening),
+// but still zoom in tight to just this outage — same fit() as the list-card path,
+// since fit() only moves the view and never touches the layer group. No arg =
+// from the list card: jump to the outage and zoom in tight.
+function select(o, opts) {
+  var soft = opts && opts.soft;
+  state.selected = o ? o.key : null;
+  if (soft) {
+    renderList();
+    renderThread();
+    if (o) fit([o], 17, 0.06, true);
+    return;
+  }
+  render();
+  if (o) {
+    if (isPhone()) setView("map");   // the list covers the map on a phone
+    fit([o], 17, 0.06, true);
+    var card = document.querySelector(".ocard.sel");
+    if (card) card.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+}
+
+// Serbia + a little padding - nothing this site shows lives outside this box, so panning or
+// zooming out further only burns tile quota on empty ocean/other-country tiles for no reason.
+var SERBIA_BOUNDS = [[40.5, 17.5], [47.0, 23.5]];
+
+// Shows/hides the "map unavailable" note (see .map-error) without touching anything else -
+// the outage list and the Leaflet layer of lines/shapes are independent of the basemap and
+// keep working even if this never loads.
+function mapError(show) {
+  var box = document.getElementById("mapError");
+  if (box) box.hidden = !show;
+}
+
+function initMap() {
+  if (!window.L) return;
+  map = L.map("map", {
+    zoomControl: true, attributionControl: true, zoomSnap: 0,
+    // Canvas overlay with a hit tolerance — taps near a line still register.
+    preferCanvas: true, renderer: L.canvas({ tolerance: 12 }),
+    minZoom: 8, maxBounds: SERBIA_BOUNDS, maxBoundsViscosity: 0.8
+  }).setView([44.60, 20.20], 8);
+  // Dark basemap: OpenFreeMap's "dark" vector style, rendered via MapLibre GL under Leaflet
+  // (see the leaflet-maplibre-gl bridge script tag at the bottom of the page). No API key, no
+  // account, no published request cap - unlike the two providers tried before this: Esri's
+  // legacy keyless tiles (fine for now, but no real usage guarantee - see PLAN.md) and CARTO
+  // (now enforces an API key with a much smaller anonymous quota than it used to). Revert path
+  // if this doesn't hold up: swap this block back for a plain
+  //   L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+  //     { attribution: "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ", maxZoom: 16, detectRetina: false, crossOrigin: true })
+  //   .addTo(map);
+  // and drop loadBasemap() - nothing else in this file depends on it.
+  map.on("moveend zoomend", syncBounds);
+  setTimeout(function () { map.invalidateSize(); }, 80);
+  drawLines();
+  loadBasemap();
+}
+
+// Basemap pending / loaded / failed: the "Učitavam mapu…" pill and sweep while pending, the
+// "map unavailable" note on failure.
+function basemapState(state) {
+  var holder = document.querySelector(".map-holder");
+  var pill = document.getElementById("mapLoading");
+  if (holder) holder.classList.toggle("basemap-pending", state === "pending");
+  if (pill) pill.hidden = state !== "pending";
+  if (state === "failed") mapError(true);
+}
+
+// The basemap engine (MapLibre, ~940 KB) and its Leaflet bridge, fetched only once the page is
+// already usable - the outage list, the shapes (drawn by Leaflet on their own) and the signup
+// button never wait for it. Injected scripts don't block the page; async=false keeps their
+// order (the bridge needs window.maplibregl first).
+function loadBasemap() {
+  var css = document.createElement("link");
+  css.rel = "stylesheet";
+  css.href = "/vendor/maplibre-gl/maplibre-gl.css";
+  document.head.appendChild(css);
+  var srcs = ["/vendor/maplibre-gl/maplibre-gl.js", "/vendor/maplibre-gl-leaflet/leaflet-maplibre-gl.js"];
+  var left = srcs.length, failed = false;
+  srcs.forEach(function (src) {
+    var s = document.createElement("script");
+    s.src = src;
+    s.async = false;
+    s.onload = function () { if (--left === 0 && !failed) addBasemap(); };
+    s.onerror = function () {
+      if (failed) return;
+      failed = true;
+      console.warn("basemap script failed to load: " + src);
+      basemapState("failed");
+    };
+    document.body.appendChild(s);
+  });
+}
+
+function addBasemap() {
+  if (window.L.maplibreGL) {
+    var basemap = L.maplibreGL({
+      // Picks up an explicit "svetla" choice from a previous visit, or the OS preference -
+      // same effectiveTheme() the toggle itself uses. See applyBasemapForTheme() for the
+      // live swap once this is loaded.
+      style: effectiveTheme() === "light" ? LIGHT_STYLE : DARK_STYLE,
+      // OpenFreeMap's style JSON carries no built-in attribution (confirmed: no "attribution"
+      // key on its source) - required attribution per openfreemap.org, added into Leaflet's own
+      // attribution control (the bridge does this automatically once the GL map fires "load").
+      attributionControl: {
+        customAttribution: '<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> ' +
+          '<a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">&copy; OpenMapTiles</a> Data from ' +
+          '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
+      }
+    }).addTo(map);
+    maplibreMap = basemap.getMaplibreMap();
+    // A single dropped tile fires MapLibre's own "error" event too (normal on a flaky
+    // connection) - not worth a banner for. What actually means "broken" is the whole style
+    // never coming up at all, so: wait for the one-time "load" event (whole style fetched and
+    // ready) and only show the note if that never happens within a generous window - covers a
+    // blocked/down CDN, a 404'd style URL, or MapLibre failing to init, without flickering the
+    // banner on every visitor who loses one tile mid-pan.
+    var loaded = false;
+    // Reveal (shapes + basemap fading in together) once the first tiles are actually drawn
+    // ("idle"), not just when the style arrives - or 2.5 s after the style at the latest, so a
+    // slow tile never keeps the outage shapes hidden.
+    var reveal = function () { basemapState("loaded"); };
+    basemap.getMaplibreMap().once("load", function () {
+      loaded = true;
+      basemap.getMaplibreMap().once("idle", reveal);
+      setTimeout(reveal, 2500);
+    });
+    setTimeout(function () { if (!loaded) basemapState("failed"); }, 9000);
+  } else {
+    // MapLibre loaded but didn't initialise - no basemap layer to even try.
+    console.warn("maplibre-gl / leaflet-maplibre-gl not available - basemap unavailable");
+    basemapState("failed");
+  }
+}
+
+/* ---------- geolocation ---------- */
+
+function haversine(a, b, c, d) {
+  var R = 6371, p = Math.PI / 180;
+  var dLat = (c - a) * p, dLng = (d - b) * p;
+  var s = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(a * p) * Math.cos(c * p) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
+// Serbian cities we either scrape or that a visitor might sit in. Used to snap a
+// rough position (IP or GPS) onto a real town name and centre.
+var CITIES = [
+  { name: "Beograd", lat: 44.8125, lng: 20.4612 },
+  { name: "Novi Sad", lat: 45.2517, lng: 19.8369 },
+  { name: "Niš", lat: 43.3209, lng: 21.8958 },
+  { name: "Kragujevac", lat: 44.0128, lng: 20.9114 },
+  { name: "Subotica", lat: 46.1000, lng: 19.6650 },
+  { name: "Zrenjanin", lat: 45.3836, lng: 20.3822 },
+  { name: "Pančevo", lat: 44.8704, lng: 20.6407 },
+  { name: "Čačak", lat: 43.8914, lng: 20.3497 },
+  { name: "Kraljevo", lat: 43.7258, lng: 20.6892 },
+  { name: "Novi Pazar", lat: 43.1367, lng: 20.5122 },
+  { name: "Kruševac", lat: 43.5806, lng: 21.3350 },
+  { name: "Vranje", lat: 42.5542, lng: 21.9008 },
+  { name: "Leskovac", lat: 42.9981, lng: 21.9461 },
+  { name: "Šabac", lat: 44.7489, lng: 19.6903 },
+  { name: "Valjevo", lat: 44.2708, lng: 19.8908 },
+  { name: "Smederevo", lat: 44.6633, lng: 20.9300 },
+  { name: "Sombor", lat: 45.7742, lng: 19.1122 },
+  { name: "Požarevac", lat: 44.6206, lng: 21.1897 },
+  { name: "Zaječar", lat: 43.9042, lng: 22.2853 },
+  { name: "Užice", lat: 43.8556, lng: 19.8425 },
+  { name: "Loznica", lat: 44.5333, lng: 19.2258 },
+  { name: "Sremska Mitrovica", lat: 44.9764, lng: 19.6122 },
+  { name: "Jagodina", lat: 43.9772, lng: 21.2611 },
+  { name: "Vršac", lat: 45.1167, lng: 21.3033 },
+  { name: "Kikinda", lat: 45.8296, lng: 20.4650 },
+  { name: "Pirot", lat: 43.1531, lng: 22.5861 },
+  { name: "Bor", lat: 44.0747, lng: 22.0950 },
+  { name: "Prokuplje", lat: 43.2342, lng: 21.5883 }
+];
+
+function nearestCity(lat, lng, maxKm) {
+  var best = null, bestKm = maxKm == null ? 40 : maxKm;
+  CITIES.forEach(function (c) {
+    var km = haversine(lat, lng, c.lat, c.lng);
+    if (km < bestKm) { bestKm = km; best = c; }
+  });
+  return best;
+}
+
+// Centre the map on the visitor's town and let the viewport filter the list down
+// to that town's outages. Called on load (from the IP estimate) and from the
+// "Moja lokacija" button (from GPS).
+function focusUser(lat, lng, announce) {
+  if (!map) return;
+  var city = nearestCity(lat, lng, 45);
+  var tLat = city ? city.lat : lat, tLng = city ? city.lng : lng;
+  if (announce) setLocateLabel(city ? city.name : "Vaša okolina");
+
+  beginProgrammaticMove();
+  var done = false;
+  function settle() {
+    if (done) return;
+    done = true;
+    endProgrammaticMove();
+    state.bounds = map.getBounds();   // adopt the town view as the list filter
+    render();
+  }
+  map.once("moveend", settle);
+  setTimeout(settle, 2500);
+  if (reduceMotion || !map.flyTo) map.setView([tLat, tLng], 13);
+  else map.flyTo([tLat, tLng], 13, { duration: 0.7 });
+}
+
+function setLocateLabel(text) {
+  document.getElementById("locateLabel").textContent = text;
+}
+
+function locate(announce) {
+  if (!navigator.geolocation || !map) { fit(dayList()); return; }
+  var btn = document.getElementById("locate");
+  btn.disabled = true;
+  setLocateLabel("Tražim…");
+  navigator.geolocation.getCurrentPosition(
+    function (pos) {
+      btn.disabled = false;
+      state.didFocus = true;
+      focusUser(pos.coords.latitude, pos.coords.longitude, announce !== false);
+    },
+    function (err) {
+      btn.disabled = false;
+      if (err && err.code === err.PERMISSION_DENIED) {
+        // The browser is blocking us — a silent reset to "Moja lokacija" just
+        // looks broken. Say so, and leave it said.
+        setLocateLabel("Lokacija blokirana u browseru");
+      } else {
+        setLocateLabel("Lokacija nije dostupna");
+        setTimeout(function () { setLocateLabel("Moja lokacija"); }, 3000);
+      }
+      if (!state.didFocus) { state.didFocus = true; fit(dayList()); }
+    },
+    // Network-based fix (wifi/cell) is enough — we snap to the nearest city
+    // anyway — and it returns far quicker than a GPS lock.
+    { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 }
+  );
+}
+
+/* ---------- header extras ---------- */
+
+// Rotating tagline under the wordmark.
+var TAGLINES = [
+  "najave radova i isključenja",
+  "voda, struja i grejanje na jednoj mapi",
+  "saznaj pre nego što ti nestane",
+  "cela Srbija, svi komunalci"
+];
+function rotateTagline() {
+  var elx = document.getElementById("tag");
+  if (!elx || reduceMotion) return;
+  var i = 0;
+  setInterval(function () {
+    i = (i + 1) % TAGLINES.length;
+    elx.classList.add("swap");
+    setTimeout(function () {
+      elx.textContent = TAGLINES[i];
+      elx.classList.remove("swap");
+    }, 400);
+  }, 4000);
+}
+
+// Floating "↑ Mapa" button, shown once the map has scrolled out of view. Docks above the
+// footer instead of overlapping its links once the footer scrolls into view - stays visible
+// and usable the whole way down instead of disappearing near the bottom.
+function watchToMap() {
+  var btn = document.getElementById("toMap");
+  var app = document.getElementById("app");
+  var foot = document.getElementById("siteFooter");
+  if (!btn || !app) return;
+  btn.onclick = function () {
+    window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+  };
+  function check() {
+    var gone = app.getBoundingClientRect().bottom < 90;
+    btn.hidden = !gone;
+    var footVisible = foot ? Math.max(0, window.innerHeight - foot.getBoundingClientRect().top) : 0;
+    btn.style.bottom = (16 + footVisible) + "px";
+  }
+  window.addEventListener("scroll", check, { passive: true });
+  window.addEventListener("resize", check, { passive: true });
+  check();
+}
+
+/* ---------- signup form ---------- */
+
+// The form itself is /signup.js, shared with the city pages (NRSignup.open()). This page
+// only wires its own buttons to it and fits its header to whether the visitor is logged in.
+
+// The whole header actions block starts hidden in the HTML - not just the dashlink - and only
+// ever appears once this check resolves and every label inside it is already correct for real.
+// Confirmed real bug with the previous version: only the dashlink's own visibility was gated
+// this way, but the CTA's TEXT was still visibly rewritten ("Prijavi se za notifikacije" ->
+// "Moje adrese") right after first paint for a logged-in visitor - a second, different flicker
+// in the same spot. Hiding the whole container until the correct final state is already applied
+// means there is nothing to visibly change after it appears - one paint, final state, done.
+function revealHactions() {
+  var box = document.getElementById("hactions");
+  if (box) box.classList.remove("pending");
+}
+NRSignup.me.then(function (loggedIn) {
+  if (loggedIn) applyLoggedInNav();
+  revealHactions();
+});
+
+// Logged-out state shows two things that both make sense apart: the quiet ".dashlink" ("already
+// have an account? here") and the primary "Prijavi se za notifikacije" CTA (the actual pitch to
+// a first-time visitor). Once we know someone's logged in, those collapse to the same
+// destination and having both visible reads as a mistake, not two options - confirmed by a
+// screenshot showing exactly that. So: hide the now-redundant quiet link, and relabel every
+// "Prijavi se" entry point on the page to something that's true for a returning, already-
+// registered visitor instead.
+function applyLoggedInNav() {
+  var dashlink = document.querySelector(".dashlink:not(.mgrlink)");
+  if (dashlink) dashlink.hidden = true;
+
+  var ctaTop = document.getElementById("ctaTop");
+  if (ctaTop) ctaTop.innerHTML = "<span>Moje adrese</span><span class='arrow'>→</span>";
+
+  var openForm = document.getElementById("openForm");
+  if (openForm) openForm.textContent = "Moje adrese";
+
+  var sideFootGo = document.querySelector("#sideFootPrijava .go");
+  if (sideFootGo) sideFootGo.textContent = "Moje adrese";
+}
+
+/* ---------- cookie consent ---------- */
+// Two categories, matching what's actually true: "Neophodni" (the dashboard's login session -
+// exempt from consent under GDPR/ePrivacy since it's strictly necessary, always on here, can't
+// be declined) and "Lokacija i personalizacija" (the IP-based auto-centering below - genuinely
+// optional, off until accepted). No ads or tracking exist on this site, so there's no third
+// category to offer. The one statistics tool, Cloudflare Web Analytics (injected by Cloudflare,
+// not in this file), stores nothing in the browser and identifies no one, so it needs no consent;
+// it is disclosed in web/privacy.html.
+var CONSENT_KEY = "nr_cookie_consent_v1";
+
+function getStoredConsent() {
+  try {
+    var raw = localStorage.getItem(CONSENT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }   // private browsing / storage blocked - treat as "not decided"
+}
+function storeConsent(locationAllowed) {
+  try {
+    localStorage.setItem(CONSENT_KEY, JSON.stringify({ necessary: true, location: !!locationAllowed, ts: Date.now() }));
+  } catch (e) {}
+}
+function hasLocationConsent() {
+  var c = getStoredConsent();
+  return !!(c && c.location);
+}
+// Consent just granted mid-visit: the first feed load went out WITHOUT ?loc=1, so there's no
+// location in state yet. Re-fetch once with the flag, cache it into state.data.meta, and centre
+// - so the opt-in takes effect immediately instead of on the next reload.
+function applyLocationConsentNow() {
+  fetch(DATA_URL + "?loc=1", { cache: "no-store" })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      var u = d && d.meta && d.meta.user;
+      if (!u || !isFinite(u.lat) || !isFinite(u.lng)) return;
+      if (state.data && state.data.meta) state.data.meta.user = u;
+      if (!state.linked) focusUser(u.lat, u.lng, false);   // opened on a city page's outages
+    })
+    .catch(function () {});
+}
+
+function initCookieBanner() {
+  var banner = document.getElementById("cookieBanner");
+  if (!banner) return;
+  if (getStoredConsent()) return;   // already decided (in this browser) - nothing to ask again
+  banner.hidden = false;
+
+  function close() { banner.hidden = true; }
+
+  document.getElementById("cookieAcceptAll").onclick = function () {
+    storeConsent(true);
+    close();
+    applyLocationConsentNow();
+  };
+  document.getElementById("cookieReject").onclick = function () {
+    storeConsent(false);
+    close();
+  };
+  document.getElementById("cookieCustomize").onclick = function () {
+    document.getElementById("cookieDetail").hidden = false;
+  };
+  document.getElementById("cookieSaveChoice").onclick = function () {
+    var locationAllowed = document.getElementById("cookieLocationToggle").checked;
+    storeConsent(locationAllowed);
+    close();
+    if (locationAllowed) applyLocationConsentNow();
+  };
+}
+initCookieBanner();
+
+document.getElementById("openForm").onclick = function () { NRSignup.open(); };
+document.getElementById("ctaTop").onclick = function (e) { e.preventDefault(); NRSignup.open(); };
+document.getElementById("sideFootPrijava").onclick = function (e) { e.preventDefault(); NRSignup.open(); };
+
+// The cookie banner sits on top of everything, and on a phone it covered the form's
+// "Potvrdi prijavu". It waits while the form is open and comes back when it closes, still
+// undecided. Only the location choice needs asking; the form works either way.
+document.addEventListener("nrsignup:open", function () {
+  var banner = document.getElementById("cookieBanner");
+  if (banner) banner.hidden = true;
+});
+document.addEventListener("nrsignup:close", function () {
+  var banner = document.getElementById("cookieBanner");
+  if (banner && !getStoredConsent()) banner.hidden = false;
+});
+
+// A city page's signup link without JavaScript comes here as /?prijava=1&grad=...: open the form
+// filled in.
+NRSignup.openFromUrl();
+
+/* ---------- boot ---------- */
+
+// A map link on a city page (/grad/…/) opens the map on that page's outages: /#o=369 zooms to
+// one notice's streets, /#o=12,40,41 frames them all. The part after # never reaches a server
+// or Google, so these links add no URLs to index. False when none of the ids is in the feed
+// any more (the notice ended after the page was built) - the page then opens as usual.
+function focusLinked() {
+  var m = /^#o=([\d,]+)$/.exec(location.hash || "");
+  if (!m) return false;
+  var ids = {}, n = 0;
+  m[1].split(",").forEach(function (s) { if (s && !ids[s]) { ids[s] = true; n++; } });
+  var hits = state.outages.filter(function (o) { return ids[String(o.id)]; });
+  if (!hits.length || !points(hits).length) return false;
+  state.linked = true;   // accepting the location cookie later must not fly away from them
+  state.day = Math.min.apply(null, hits.map(function (o) { return o.d; }));
+  // One notice shown as one card: open it. One notice in several places (o.part) is framed whole.
+  var today = hits.filter(function (o) { return o.d === state.day; });
+  if (n === 1 && today.length === 1) {
+    select(today[0]);
+    return true;
+  }
+  state.selected = null;
+  if (isPhone()) setView("map");
+  render();
+  // All of them, every day: the view stays on this town when a day tab is switched.
+  fit(hits, 15, null, true);
+  return true;
+}
+
+function load(data) {
+  state.data = data;
+  state.loaded = true;
+  state.outages = (data.outages || []).map(normalize);
+  // Land on the first day tab that actually has something.
+  for (var i = 0; i < DAY_LABELS.length; i++) {
+    if (state.outages.some(function (o) { return o.d === i; })) { state.day = i; break; }
+  }
+  render();
+  if (typeof sizeApp === "function") sizeApp();   // chips are in now — re-measure the header
+  if (!state.didFocus) {
+    state.didFocus = true;
+    if (focusLinked()) return;
+    var u = data.meta && data.meta.user;
+    if (u && isFinite(u.lat) && isFinite(u.lng) && hasLocationConsent()) {
+      // The data API tags the response with the visitor's approximate location
+      // (Cloudflare edge, IP-derived, no permission prompt) - only used once the cookie banner's
+      // "Lokacija i personalizacija" category has been accepted (see initCookieBanner()).
+      // Declined or not yet decided -> falls through to the same "frame everything" behaviour
+      // as no hint at all, and applyLocationConsentNow() re-applies it live the moment consent
+      // is granted later, without waiting for a reload.
+      focusUser(u.lat, u.lng, false);
+    } else {
+      // No location hint, or no consent for it yet — frame every outage. Precise GPS location
+      // stays opt-in via the separate "Moja lokacija" button, which is the browser's own native
+      // permission prompt - a different, already-explicit consent mechanism, not gated by this
+      // site's cookie banner too.
+      fit(dayList());
+    }
+  }
+}
+
+renderProviders();
+rotateTagline();
+watchToMap();
+initMap();
+document.getElementById("locate").onclick = function () { locate(true); };
+document.getElementById("scopeReset").onclick = resetScope;
+(function () {
+  var btns = document.querySelectorAll("#viewtoggle button");
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].onclick = function () { setView(this.dataset.v); };
+  }
+})();
+
+// The header grows a second row (city chips) and can wrap — measure it so the
+// map/sidebar area fills exactly the rest of the viewport on desktop.
+function sizeApp() {
+  var h = document.getElementById("top").offsetHeight;
+  document.documentElement.style.setProperty("--app-h", (window.innerHeight - h) + "px");
+  if (map) map.invalidateSize();
+}
+window.addEventListener("resize", sizeApp);
+sizeApp();
+
+// Live feed served by the Cloudflare Worker (cf/worker.js). Falls back to a
+// locally built file for offline preview, then to the inline SAMPLE.
+var DATA_URL = "https://api.najavaradova.rs/outages.json";
+
+// Add ?loc=1 (so the Worker includes a coarse edge-geo estimate in meta.user) ONLY when the
+// visitor has accepted the optional location category in the cookie banner. Undecided or
+// rejected -> plain URL, no location derived or returned.
+function feedUrl() {
+  var c = getStoredConsent();
+  return DATA_URL + (c && c.location ? "?loc=1" : "");
+}
+
+function usable(d) { return d && d.outages && d.outages.length ? d : null; }
+
+fetch(feedUrl(), { cache: "no-store" })
+  .then(function (r) { return r.ok ? r.json() : null; })
+  .then(function (d) {
+    if (usable(d)) { load(d); return; }
+    return fetch("outages.json", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (local) { load(usable(local) || SAMPLE); });
+  })
+  .catch(function () {
+    fetch("outages.json", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (local) { load(usable(local) || SAMPLE); })
+      .catch(function () { load(SAMPLE); });
+  });
+</script>
+</body>
+</html>

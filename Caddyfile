@@ -1,0 +1,32 @@
+# Terminates real TLS at the VM using a Cloudflare Origin Certificate (see deploy/README.md's
+# HTTPS section) instead of the plain-HTTP api:8000 that Cloudflare's "Flexible" mode was
+# tolerating - Flexible only encrypts visitor<->Cloudflare, the Cloudflare<->VM hop stayed plain
+# HTTP. An Origin Certificate isn't publicly trusted (a browser hitting the VM's IP directly
+# would reject it) but Cloudflare trusts it specifically - that's what makes "Full (strict)" mode
+# possible instead of just "Full" (which accepts a self-signed cert but doesn't verify it).
+app.najavaradova.rs {
+    tls /etc/caddy/certs/origin_cert.pem /etc/caddy/certs/origin_key.pem
+
+    # Security headers for everything this origin serves: the dashboard (app/dashboard.html),
+    # the magic-link / unsubscribe confirm pages, and the JSON API. All of that content is
+    # first-party and self-contained - no third-party scripts, styles, images or fetches - so a
+    # tight CSP is safe here (unlike the marketing site on Cloudflare Pages, which loads the map
+    # libraries from a CDN). 'unsafe-inline' stays only because the dashboard's JS/CSS is inline;
+    # tightening that to hashes is a separate pass.
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Cross-Origin-Opener-Policy "same-origin"
+        Permissions-Policy "geolocation=(), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()"
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'"
+        # The dashboard and magic-link pages carry their own noindex <meta>; this covers the
+        # JSON API routes and stale URLs (e.g. app.najavaradova.rs/register) that Search
+        # Console otherwise flags as 404s. Nothing on this origin belongs in a search index.
+        X-Robots-Tag "noindex"
+        -Server
+    }
+
+    reverse_proxy api:8000
+}

@@ -1,0 +1,812 @@
+[
+ {
+  "notice": 626,
+  "why": "EPS range Partizanska 34-40",
+  "addresses": [
+   {
+    "street": "Partizanska",
+    "number": "34",
+    "place": "Novi Sad",
+    "expect": "alert",
+    "day": "7.9."
+   },
+   {
+    "street": "Partizanska",
+    "number": "32",
+    "place": "Novi Sad",
+    "expect": "none"
+   }
+  ]
+ },
+ {
+  "notice": 792,
+  "why": "EPS 'delovi naselja Ribnjak' must not reach central Novi Sad (real false alarm 09.09.)",
+  "addresses": [
+   {
+    "street": "Futoška",
+    "number": "119",
+    "place": "Novi Sad",
+    "expect": "none"
+   },
+   {
+    "street": "Futoška",
+    "number": "13",
+    "place": "Novi Sad",
+    "expect": "none"
+   },
+   {
+    "street": "Bulevar Cara Lazara",
+    "number": "57",
+    "place": "Novi Sad",
+    "expect": "none"
+   }
+  ]
+ },
+ {
+  "notice": 889,
+  "why": "BE heating works, streets named",
+  "addresses": [
+   {
+    "street": "Braće Jerkovića",
+    "number": "189",
+    "place": "Beograd (Voždovac)",
+    "expect": "alert",
+    "day": "8.9."
+   },
+   {
+    "street": "Mitrovdanska",
+    "number": "31",
+    "place": "Beograd (Voždovac)",
+    "expect": "alert",
+    "day": "8.9."
+   },
+   {
+    "street": "Ljube Čupe",
+    "number": "5",
+    "place": "Beograd (Voždovac)",
+    "expect": "alert",
+    "day": "8.9."
+   },
+   {
+    "street": "Ljube Čupe",
+    "number": "16",
+    "place": "Beograd (Voždovac)",
+    "expect": "none"
+   }
+  ]
+ },
+ {
+  "notice": 3459,
+  "why": "BE heating works, Borisavljevićeva 53-55",
+  "addresses": [
+   {
+    "street": "Borisavljevićeva",
+    "number": "53",
+    "place": "Beograd (Voždovac)",
+    "expect": "alert",
+    "day": "30.9."
+   },
+   {
+    "street": "Borisavljevićeva",
+    "number": "86",
+    "place": "Beograd (Voždovac)",
+    "expect": "none"
+   },
+   {
+    "street": "Vojvode Đurovića",
+    "number": "10",
+    "place": "Beograd (Voždovac)",
+    "expect": "alert",
+    "day": "30.9."
+   }
+  ]
+ },
+ {
+  "notice": 915,
+  "why": "NS toplana, TO Jug consumer area street list",
+  "addresses": [
+   {
+    "street": "Bulevar Cara Lazara",
+    "number": "57",
+    "place": "Novi Sad",
+    "expect": "alert",
+    "day": "9.9."
+   },
+   {
+    "street": "Danila Kiša",
+    "number": "32",
+    "place": "Novi Sad",
+    "expect": "alert",
+    "day": "9.9."
+   },
+   {
+    "street": "Alberta Tome",
+    "number": "4",
+    "place": "Novi Sad",
+    "expect": "alert",
+    "day": "9.9."
+   }
+  ]
+ },
+ {
+  "notice": 920,
+  "why": "BVK planned works, Zvezdara street list",
+  "addresses": [
+   {
+    "street": "Učitelja Miloša Jankovića",
+    "number": "5",
+    "place": "Beograd (Zvezdara)",
+    "expect": "alert",
+    "day": "10.9."
+   },
+   {
+    "street": "Preševska",
+    "number": "71",
+    "place": "Beograd (Zvezdara)",
+    "expect": "alert",
+    "day": "10.9."
+   },
+   {
+    "street": "Đoka Vojvodića",
+    "number": "6",
+    "place": "Beograd (Zvezdara)",
+    "expect": "alert",
+    "day": "10.9."
+   }
+  ]
+ },
+ {
+  "notice": 992,
+  "why": "BVK fault list: Dragiše Brašovana 13",
+  "addresses": [
+   {
+    "street": "Marka Čelebonovića",
+    "number": "25",
+    "place": "Beograd (Novi Beograd)",
+    "expect": "alert",
+    "day": "9.9."
+   },
+   {
+    "street": "Dragiše Brašovana",
+    "number": "13",
+    "place": "Beograd (Novi Beograd)",
+    "expect": "alert",
+    "day": "9.9."
+   },
+   {
+    "street": "Dragiše Brašovana",
+    "number": "60",
+    "place": "Beograd (Novi Beograd)",
+    "expect": "none"
+   }
+  ]
+ },
+ {
+  "notice": 1063,
+  "why": "nstoplana re-posted an August notice with a fresh date: past, never sent (real incident)",
+  "addresses": [
+   {
+    "street": "Rumenačka",
+    "number": "51",
+    "place": "Novi Sad",
+    "expect": "none"
+   },
+   {
+    "street": "Kornelija Stankovića",
+    "number": "7",
+    "place": "Novi Sad",
+    "expect": "none"
+   }
+  ]
+ },
+ {
+  "notice": 1106,
+  "why": "vikzr 'D2' is a regional road, not a street: no alert (real false alarm)",
+  "addresses": [
+   {
+    "street": "Žarka Turinskog",
+    "number": "9",
+    "place": "Zrenjanin",
+    "expect": "none"
+   }
+  ]
+ },
+ {
+  "notice": 1419,
+  "why": "vikns: Bulevar kralja Petra Prvog and surrounding streets",
+  "addresses": [
+   {
+    "street": "Bulevar Kralja Petra I",
+    "number": "41",
+    "place": "Novi Sad",
+    "expect": "alert",
+    "day": "14.9."
+   }
+  ]
+ },
+ {
+  "notice": 1659,
+  "why": "BVK: Zvezdara list + Novi Beograd 'Blok 70'; Voždovac/Zvezdara addresses not in it got alerts (real false alarm)",
+  "addresses": [
+   {
+    "street": "Bulevar Mihajla Pupina",
+    "number": "11",
+    "place": "Beograd (Novi Beograd)",
+    "expect": "none"
+   },
+   {
+    "street": "Vojvode Stepe",
+    "number": "393",
+    "place": "Beograd (Voždovac)",
+    "expect": "none"
+   },
+   {
+    "street": "Bulevar Oslobođenja",
+    "number": "88",
+    "place": "Beograd (Voždovac)",
+    "expect": "none"
+   },
+   {
+    "street": "Koste Novakovića",
+    "number": "14",
+    "place": "Beograd (Zvezdara)",
+    "expect": "alert",
+    "day": "17.9."
+   },
+   {
+    "street": "Milana Grola",
+    "number": "9",
+    "place": "Beograd (Zvezdara)",
+    "expect": "alert",
+    "day": "17.9."
+   }
+  ]
+ },
+ {
+  "notice": 1909,
+  "why": "BVK fault: Preševska bb (corner of Učitelja Miloša Jankovića); a house about 150 m along may get a direct or a \"u blizini\" alert, both are fine",
+  "addresses": [
+   {
+    "street": "Preševska",
+    "number": "71",
+    "place": "Beograd (Zvezdara)",
+    "expect": "alert",
+    "day": "17.9."
+   }
+  ]
+ },
+ {
+  "notice": 1944,
+  "why": "vodovodca re-post of 15.-16.08. works: past, never sent",
+  "addresses": [
+   {
+    "street": "Nemanjina",
+    "number": "10",
+    "place": "Čačak",
+    "expect": "none"
+   }
+  ]
+ },
+ {
+  "notice": 1982,
+  "why": "BVK planned works, Zvezdara street list",
+  "addresses": [
+   {
+    "street": "Učitelja Miloša Jankovića",
+    "number": "5",
+    "place": "Beograd (Zvezdara)",
+    "expect": "alert",
+    "day": "21.9."
+   },
+   {
+    "street": "Hektorovićeva",
+    "number": "17",
+    "place": "Beograd (Zvezdara)",
+    "expect": "alert",
+    "day": "21.9."
+   },
+   {
+    "street": "Brsjačka",
+    "number": "18",
+    "place": "Beograd (Zvezdara)",
+    "expect": "alert",
+    "day": "21.9."
+   }
+  ]
+ },
+ {
+  "notice": 2023,
+  "why": "nstoplana Cankareva works, street list",
+  "addresses": [
+   {
+    "street": "Janka Čmelika",
+    "number": "53",
+    "place": "Novi Sad",
+    "expect": "alert",
+    "day": "18.9."
+   },
+   {
+    "street": "Koste Racina",
+    "number": "19",
+    "place": "Novi Sad",
+    "expect": "alert",
+    "day": "18.9."
+   },
+   {
+    "street": "Dr Svetislava Kasapinovića",
+    "number": "19",
+    "place": "Novi Sad",
+    "expect": "alert",
+    "day": "18.9."
+   }
+  ]
+ },
+ {
+  "notice": 2178,
+  "why": "EPS: Železnička 4-30 plus bank LANDMARKs; Danila Kiša must not match through a landmark (real false alarm)",
+  "addresses": [
+   {
+    "street": "Danila Kiša",
+    "number": "32",
+    "place": "Novi Sad",
+    "expect": "none"
+   },
+   {
+    "street": "Danila Kiša",
+    "number": "23",
+    "place": "Novi Sad",
+    "expect": "none"
+   },
+   {
+    "street": "Železnička",
+    "number": "10",
+    "place": "Novi Sad",
+    "expect": "alert",
+    "day": "22.9."
+   }
+  ]
+ },
+ {
+  "notice": 2652,
+  "why": "BVK fault: Bulevar Franše d Eperea 5",
+  "addresses": [
+   {
+    "street": "Bulevar Franše D Eperea",
+    "number": "5",
+    "place": "Beograd (Savski Venac)",
+    "expect": "alert",
+    "day": "24.9."
+   },
+   {
+    "street": "Bulevar Franše D Eperea",
+    "number": "88",
+    "place": "Beograd (Savski Venac)",
+    "expect": "none"
+   }
+  ]
+ },
+ {
+  "notice": 2668,
+  "why": "nstoplana: Kasapinovića 15-29 and 4A-34",
+  "addresses": [
+   {
+    "street": "Koste Racina",
+    "number": "19",
+    "place": "Novi Sad",
+    "expect": "alert",
+    "day": "25.9."
+   },
+   {
+    "street": "Dr Svetislava Kasapinovića",
+    "number": "15",
+    "place": "Novi Sad",
+    "expect": "alert",
+    "day": "25.9."
+   },
+   {
+    "street": "Dr Svetislava Kasapinovića",
+    "number": "44",
+    "place": "Novi Sad",
+    "expect": "none"
+   }
+  ]
+ },
+ {
+  "notice": 2791,
+  "why": "EPS: Bulevar Mihajla Pupina 12-14",
+  "addresses": [
+   {
+    "street": "Bulevar Mihajla Pupina",
+    "number": "12",
+    "place": "Beograd (Novi Beograd)",
+    "expect": "alert",
+    "day": "26.9."
+   },
+   {
+    "street": "Bulevar Mihajla Pupina",
+    "number": "11",
+    "place": "Beograd (Novi Beograd)",
+    "expect": "none"
+   },
+   {
+    "street": "Bulevar Mihajla Pupina",
+    "number": "207",
+    "place": "Beograd (Novi Beograd)",
+    "expect": "none"
+   }
+  ]
+ },
+ {
+  "notice": 2796,
+  "why": "BE sudden cut: Poručnika Spasića i Mašere 4 only",
+  "addresses": [
+   {
+    "street": "Poručnika Spasića I Mašere",
+    "number": "4",
+    "place": "Beograd (Čukarica)",
+    "expect": "alert",
+    "day": "25.9."
+   },
+   {
+    "street": "Poručnika Spasića I Mašere",
+    "number": "118",
+    "place": "Beograd (Čukarica)",
+    "expect": "none"
+   },
+   {
+    "street": "Vojvode Stepe",
+    "number": "393",
+    "place": "Beograd (Voždovac)",
+    "expect": "none"
+   }
+  ]
+ },
+ {
+  "notice": 3394,
+  "why": "nstoplana: Seljačkih buna, Bulevar kneza Miloša 12-34, Jovana Dučića 16-36",
+  "addresses": [
+   {
+    "street": "Seljačkih Buna",
+    "number": "3",
+    "place": "Novi Sad",
+    "expect": "alert",
+    "day": "29.9."
+   },
+   {
+    "street": "Bulevar Kneza Miloša",
+    "number": "12",
+    "place": "Novi Sad",
+    "expect": "alert",
+    "day": "29.9."
+   },
+   {
+    "street": "Bulevar Kneza Miloša",
+    "number": "37",
+    "place": "Novi Sad",
+    "expect": "none"
+   },
+   {
+    "street": "Bulevar Jovana Dučića",
+    "number": "16",
+    "place": "Novi Sad",
+    "expect": "alert",
+    "day": "29.9."
+   },
+   {
+    "street": "Bulevar Jovana Dučića",
+    "number": "79",
+    "place": "Novi Sad",
+    "expect": "none"
+   }
+  ]
+ },
+ {
+  "notice": 3465,
+  "why": "BE: whole heating area of toplana 'Cerak' (held for the operator is fine)",
+  "addresses": [
+   {
+    "street": "Kneza Višeslava",
+    "number": "134",
+    "place": "Beograd (Čukarica)",
+    "expect": "alert",
+    "day": "30.9."
+   },
+   {
+    "street": "Poručnika Spasića I Mašere",
+    "number": "4",
+    "place": "Beograd (Čukarica)",
+    "expect": "alert",
+    "day": "30.9."
+   }
+  ]
+ },
+ {
+  "notice": 3929,
+  "why": "EPS: Rumenačka 30-54, 31-41 (real false alarm on 53)",
+  "addresses": [
+   {
+    "street": "Rumenačka",
+    "number": "51",
+    "place": "Novi Sad",
+    "expect": "none"
+   },
+   {
+    "street": "Rumenačka",
+    "number": "35",
+    "place": "Novi Sad",
+    "expect": "alert",
+    "day": "7.10."
+   },
+   {
+    "street": "Rumenačka",
+    "number": "43",
+    "place": "Novi Sad",
+    "expect": "none"
+   }
+  ]
+ },
+ {
+  "notice": 4077,
+  "why": "naissus: 'deo Vizantijskog bulevara' among the listed streets; which part is not said, so everyone on the street is told",
+  "addresses": [
+   {
+    "street": "Vizantijski Bulevar",
+    "number": "53",
+    "place": "Niš (Medijana)",
+    "expect": "alert"
+   }
+  ]
+ },
+ {
+  "notice": 4264,
+  "why": "EPS street 'Nova' must not match Prešernova/Puškinova by substring (real false alarm 12.10.)",
+  "addresses": [
+   {
+    "street": "Prešernova",
+    "number": "11",
+    "place": "Novi Sad",
+    "expect": "none"
+   },
+   {
+    "street": "Puškinova",
+    "number": "11",
+    "place": "Novi Sad",
+    "expect": "none"
+   }
+  ]
+ },
+ {
+  "notice": 4557,
+  "why": "EPS Žarkovo: Zdravka Jovanovića 29-39, Kopaonička 52-58, 57-63",
+  "addresses": [
+   {
+    "street": "Zdravka Jovanovića",
+    "number": "29",
+    "place": "Beograd (Čukarica)",
+    "expect": "alert",
+    "day": "15.10."
+   },
+   {
+    "street": "Kopaonička",
+    "number": "56",
+    "place": "Beograd (Čukarica)",
+    "expect": "alert",
+    "day": "15.10."
+   },
+   {
+    "street": "Kopaonička",
+    "number": "63",
+    "place": "Beograd (Čukarica)",
+    "expect": "alert",
+    "day": "15.10."
+   }
+  ]
+ },
+ {
+  "notice": 5820,
+  "why": "vikns: Balzakova until 11h",
+  "addresses": [
+   {
+    "street": "Balzakova",
+    "number": "5",
+    "place": "Novi Sad",
+    "expect": "alert",
+    "day": "26.10."
+   },
+   {
+    "street": "Balzakova",
+    "number": "23",
+    "place": "Novi Sad",
+    "expect": "alert",
+    "day": "26.10."
+   }
+  ]
+ },
+ {
+  "notice": 5830,
+  "why": "BVK fault Omladinskih brigada 96: a neighbour is told it may reach them",
+  "addresses": [
+   {
+    "street": "Omladinskih Brigada",
+    "number": "94",
+    "place": "Beograd (Novi Beograd)",
+    "expect": "alert"
+   }
+  ]
+ },
+ {
+  "notice": 6058,
+  "why": "EPS explicit numbers 48, 50, 52, 54",
+  "addresses": [
+   {
+    "street": "Prote Smiljanića",
+    "number": "50",
+    "place": "Šabac",
+    "expect": "alert",
+    "day": "30.10."
+   },
+   {
+    "street": "Prote Smiljanića",
+    "number": "62",
+    "place": "Šabac",
+    "expect": "none"
+   }
+  ]
+ },
+ {
+  "notice": 6083,
+  "why": "BVK fault Hadži Đerina 14: a house about 100 m away is told it may reach them",
+  "addresses": [
+   {
+    "street": "Hadži-prodanova",
+    "number": "13",
+    "place": "Beograd (Vračar)",
+    "expect": "alert"
+   }
+  ]
+ },
+ {
+  "notice": 6304,
+  "why": "BVK fault Ilije Stojadinovića 73",
+  "addresses": [
+   {
+    "street": "Ilije Stojadinovića",
+    "number": "73",
+    "place": "Beograd (Čukarica)",
+    "expect": "alert",
+    "day": "28.10."
+   },
+   {
+    "street": "Kneza Višeslava",
+    "number": "134",
+    "place": "Beograd (Čukarica)",
+    "expect": "alert"
+   }
+  ]
+ },
+ {
+  "notice": 6449,
+  "why": "BE works: Krunska only from Molerova to Kneginje Zorke (about no. 70 onwards); no. 6 is outside (real false alarm 30.10.), 72 inside",
+  "addresses": [
+   {
+    "street": "Krunska",
+    "number": "6",
+    "place": "Beograd (Vračar)",
+    "expect": "none"
+   },
+   {
+    "street": "Krunska",
+    "number": "72",
+    "place": "Beograd (Vračar)",
+    "expect": "alert",
+    "day": "30.10."
+   }
+  ]
+ },
+ {
+  "notice": 6460,
+  "why": "BVK flushing: Banjica, Bulevar oslobođenja from Crnotravska to Jajinci, night 6/7.11.; no. 88 counts as inside",
+  "addresses": [
+   {
+    "street": "Bulevar Oslobođenja",
+    "number": "88",
+    "place": "Beograd (Voždovac)",
+    "expect": "alert",
+    "day": "6.11."
+   }
+  ]
+ },
+ {
+  "notice": 6458,
+  "why": "BVK flushing block bounded by Peke Pavlović, Zaplanjska, Braće Jerković, night 4/5.11.: inside the block alerted (Darvinova), across the road from it a moguć alert (Braće Jerkovića 20), far down a boundary street nothing (189, real false alarm 30.10.)",
+  "addresses": [
+   {
+    "street": "Braće Jerkovića",
+    "number": "189",
+    "place": "Beograd (Voždovac)",
+    "expect": "none"
+   },
+   {
+    "street": "Darvinova",
+    "number": "6",
+    "place": "Beograd (Voždovac)",
+    "expect": "alert",
+    "day": "4.11."
+   },
+   {
+    "street": "Braće Jerkovića",
+    "number": "20",
+    "place": "Beograd (Voždovac)",
+    "expect": "alert"
+   }
+  ]
+ },
+ {
+  "notice": 6459,
+  "why": "BVK flushing block bounded by the autoput, Braće Jerković, Kružni put, Crnotravska, Bulevar oslobođenja, night 5/6.11. (real false alarms 30.10.) The autoput is not in the street register, so the block can't close: nobody is alerted (operator note).",
+  "addresses": [
+   {
+    "street": "Braće Jerkovića",
+    "number": "189",
+    "place": "Beograd (Voždovac)",
+    "expect": "none"
+   },
+   {
+    "street": "Bulevar Oslobođenja",
+    "number": "88",
+    "place": "Beograd (Voždovac)",
+    "expect": "none"
+   }
+  ]
+ },
+ {
+  "notice": 6503,
+  "why": "EPS: only Prote Smiljanića 48, 50, 52, 54 (4 houses of 276); an address with no number (BB) cannot be placed among them (real false alarm 31.10.)",
+  "addresses": [
+   {
+    "street": "Prote Smiljanića",
+    "number": "BB",
+    "place": "Šabac",
+    "expect": "none"
+   },
+   {
+    "street": "Prote Smiljanića",
+    "number": "52",
+    "place": "Šabac",
+    "expect": "alert",
+    "day": "3.11."
+   }
+  ]
+ },
+ {
+  "notice": 6514,
+  "why": "BVK fault at one house (Miloša Gligorijevića bb, at the school) - Veliki Mokri Lug is where it is, not the area cut (real false alarm 31.10.)",
+  "addresses": [
+   {
+    "street": "Milošev Kladenac",
+    "number": "5",
+    "place": "Beograd (Zvezdara)",
+    "expect": "none"
+   }
+  ]
+ },
+ {
+  "notice": 6654,
+  "why": "nstoplana lists \"Kornelija Stankovića bb (ZGOP)\": one building without a number, not the street - a manager at another number on the street got the heating cut (real false alarm 02.11.)",
+  "addresses": [
+   {
+    "street": "Kornelija Stankovića",
+    "number": "7",
+    "place": "Novi Sad",
+    "expect": "none"
+   },
+   {
+    "street": "Jovana Hranilovića",
+    "number": "55",
+    "place": "Novi Sad",
+    "expect": "alert",
+    "day": "3.11."
+   }
+  ]
+ }
+]

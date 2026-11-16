@@ -1,0 +1,9 @@
+# Cloudflare Pages redirects (deployed from web/).
+# A duplicate Belgrade opština page, from a notice that named the region "Beograd - Vračar".
+/grad/beograd-vracar/* /grad/vracar/ 301
+/grad/beograd-vracar /grad/vracar/ 301
+# Pančevo neighbourhoods that Beograd's box had swept in (scripts/fetch_kvartovi.place_by_rgz).
+/grad/beograd/kotez-2/* /grad/pancevo/ 301
+/grad/beograd/kotez-2 /grad/pancevo/ 301
+/grad/beograd/sodara/* /grad/pancevo/ 301
+/grad/beograd/sodara /grad/pancevo/ 301

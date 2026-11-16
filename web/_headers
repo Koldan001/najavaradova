@@ -1,0 +1,23 @@
+# Cloudflare Pages reads this file from the deploy root and applies the headers to matching
+# paths on najavaradova.rs. The app.najavaradova.rs origin sets its own equivalents in the
+# Caddyfile - keep the two in rough sync.
+#
+# The CSP here is Report-Only on purpose: the map libraries are self-hosted under /vendor now
+# (was unpkg - see git history), but tiles/glyphs still come from OpenFreeMap and MapLibre spins
+# up a blob: web worker - an enforcing CSP that gets any of that wrong blanks the map. Report-Only
+# lets violations show up in the browser console (and a report endpoint, if one is ever added)
+# without breaking anything. Once it's been quiet for a while, rename the header to
+# Content-Security-Policy to enforce.
+# (static.)cloudflareinsights.com is Cloudflare Web Analytics: Cloudflare injects its beacon into
+# every page itself; it is disclosed in web/privacy.html.
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Cross-Origin-Opener-Policy: same-origin
+  Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.najavaradova.rs https://app.najavaradova.rs https://tiles.openfreemap.org https://openfreemap.org https://cloudflareinsights.com; worker-src blob:; frame-ancestors 'none'; base-uri 'none'; object-src 'none'
+
+# The token-bearing landing pages (served by the API, not Pages) already send noindex; these
+# static legal/utility pages are fine to index, so no override needed here.

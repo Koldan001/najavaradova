@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var m=document.cookie.match(/(?:^|; )theme=([^;]*)/);var t=m?decodeURIComponent(m[1]):null;if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<title>Za upravnike zgrada — obaveštenja o isključenjima za sve zgrade | NajavaRadova.rs</title>
+<meta name="description" content="Obaveštenja o isključenju vode, struje i grejanja za sve zgrade kojima upravljate, na jednom mestu, sa tekstom spremnim za grupu stanara. Nalepite spisak adresa i gotovo.">
+<link rel="canonical" href="https://najavaradova.rs/upravnici/">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23101013'/%3E%3Crect x='27' y='13' width='10' height='27' rx='5' fill='%23F2F0EE'/%3E%3Ccircle cx='32' cy='48' r='6' fill='%235FAEE3'/%3E%3C/svg%3E">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #101013; --panel: #15151A; --panel-border: #24242A; --hair: #1E1E23;
+    --text: #F2F0EE; --dim: #A5A1AB; --mute: #8C8892;
+    --link: #7FA9F5; --link-hi: #B3CBFA; --voda: #5FAEE3; --struja: #E0B05C; --grejanje: #E08468;
+    --sel-bg: #17171B; --ok: #6BCB8B;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      color-scheme: light;
+      --bg: #EFEBE2; --panel: #F6F3EC; --panel-border: #DCD4C3; --hair: #E2DBC9;
+      --text: #2A2620; --dim: #6E6858; --mute: #8B8471;
+      --link: #3763B0; --link-hi: #2A4F8C; --sel-bg: #E6DFCE; --ok: #2F8A4F;
+      --voda: #2F72A8; --struja: #9A6A12; --grejanje: #B04A2E;
+    }
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #EFEBE2; --panel: #F6F3EC; --panel-border: #DCD4C3; --hair: #E2DBC9;
+    --text: #2A2620; --dim: #6E6858; --mute: #8B8471;
+    --link: #3763B0; --link-hi: #2A4F8C; --sel-bg: #E6DFCE; --ok: #2F8A4F;
+    --voda: #2F72A8; --struja: #9A6A12; --grejanje: #B04A2E;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; line-height: 1.6;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { color: var(--link-hi); }
+  header {
+    display: flex; align-items: center; gap: 10px;
+    height: 56px; padding: 0 clamp(16px, 3vw, 32px);
+    border-bottom: 1px solid var(--panel-border);
+  }
+  header .name { font-size: 17px; font-weight: 700; letter-spacing: -.02em; color: var(--text); }
+  header .name .tld { color: var(--mute); font-weight: 400; }
+  header nav { margin-left: auto; display: flex; gap: 18px; font-size: 14px; }
+  header nav a { color: var(--dim); }
+  header nav a.on { color: var(--text); font-weight: 600; }
+  main { max-width: 960px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 32px) 64px; }
+  section { padding: clamp(36px, 6vw, 64px) 0 0; }
+  .eyebrow { font-size: 12.5px; font-weight: 700; letter-spacing: .12em; color: var(--voda); text-transform: uppercase; margin-bottom: 12px; }
+  h1 { font-size: clamp(30px, 5vw, 46px); line-height: 1.1; font-weight: 700; letter-spacing: -.035em; max-width: 720px; }
+  h1 .calls { display: block; margin-top: 10px; font-size: .62em; letter-spacing: -.02em; line-height: 1.3; }
+  h1 .calls span { display: block; }
+  .lead { font-size: clamp(16px, 2vw, 18.5px); color: var(--dim); max-width: 620px; margin-top: 16px; }
+  .ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+  .btn { display: inline-block; padding: 12px 20px; border-radius: 10px; font-weight: 600; font-size: 15px; border: 0; font-family: inherit; cursor: pointer; }
+  .btn.primary { background: var(--text); color: var(--bg); }
+  .btn.primary:hover { color: var(--bg); opacity: .9; }
+  .btn.primary:disabled { opacity: .4; cursor: default; }
+  .btn.ghost { border: 1px solid var(--panel-border); color: var(--text); background: none; }
+  h2 { font-size: clamp(22px, 3vw, 28px); font-weight: 700; letter-spacing: -.025em; margin-bottom: 16px; }
+  p { color: var(--dim); font-size: 15.5px; }
+  strong { color: var(--text); font-weight: 600; }
+  .small { font-size: 13px; color: var(--mute); }
+
+  .benefits, .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 14px; padding: 20px; }
+  .card h3 { font-size: 16.5px; font-weight: 700; letter-spacing: -.01em; margin-bottom: 6px; }
+  .card p { font-size: 14.5px; }
+  .steps { counter-reset: s; }
+  .steps .card h3::before { counter-increment: s; content: counter(s); display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--sel-bg); font-size: 13px; margin-right: 8px; }
+
+  .example { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+  .phone { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 18px; padding: 16px; }
+  .phone .from { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 13.5px; color: var(--mute); }
+  .phone .av { width: 30px; height: 30px; border-radius: 50%; background: var(--sel-bg); display: grid; place-items: center; font-weight: 700; color: var(--text); }
+  .bubble { background: var(--sel-bg); border-radius: 12px; padding: 12px 14px; font-size: 14.5px; color: var(--text); white-space: pre-line; }
+  .bubble .k { color: var(--voda); font-weight: 700; font-size: 12.5px; letter-spacing: .06em; display: block; margin-bottom: 4px; }
+  .copybtn { margin-top: 10px; text-align: center; border: 1px solid var(--panel-border); border-radius: 10px; padding: 9px; font-size: 14px; font-weight: 600; color: var(--link); }
+  .arrow { font-size: 13px; color: var(--mute); margin: 10px 2px 0; }
+  .viber .bubble { background: #3B2F63; color: #F2F0EE; }
+  .viber .from .av { background: #7360F2; color: #fff; }
+  .sig { color: #BDB6E8; }
+  .cover { margin-top: 6px; }
+
+  /* the list form */
+  .box { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 14px; padding: 20px; }
+  form { display: grid; gap: 14px; }
+  label { font-size: 14px; font-weight: 600; color: var(--text); display: grid; gap: 6px; }
+  label span { font-weight: 400; color: var(--mute); font-size: 13px; }
+  input, textarea { font: inherit; font-size: 15px; color: var(--text); background: var(--bg); border: 1px solid var(--panel-border); border-radius: 10px; padding: 10px 12px; width: 100%; }
+  textarea { min-height: 220px; resize: vertical; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13.5px; line-height: 1.7; tab-size: 4; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .hintrow { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--mute); }
+  .err { color: var(--grejanje); font-size: 14px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .pill { border-radius: 20px; padding: 3px 11px; font-size: 13px; font-weight: 600; border: 1px solid var(--panel-border); }
+  .pill.ok { color: var(--ok); } .pill.maybe { color: var(--struja); } .pill.num { color: var(--link); } .pill.bad { color: var(--grejanje); }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  td { padding: 10px 8px; border-top: 1px solid var(--hair); vertical-align: top; color: var(--dim); }
+  td.st { width: 26px; font-size: 14px; font-weight: 700; text-align: center; }
+  td.st.ok { color: var(--ok); } td.st.maybe { color: var(--struja); } td.st.num { color: var(--link); } td.st.bad { color: var(--grejanje); }
+  td.typed { color: var(--mute); width: 34%; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; padding-top: 12px; word-break: break-word; }
+  td.res b { color: var(--text); font-weight: 600; }
+  td.res .sub { display: block; font-size: 13px; color: var(--mute); margin-top: 2px; }
+  td.x { width: 30px; text-align: right; }
+  tr.gone td { opacity: .4; }
+  tr.gone td.res b { text-decoration: line-through; }
+  .opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+  .opt { border: 1px solid var(--panel-border); border-radius: 8px; padding: 4px 10px; font-size: 13.5px; color: var(--text); background: none; font-family: inherit; cursor: pointer; }
+  .opt.pick { border-color: var(--ok); color: var(--ok); font-weight: 600; }
+  .opt.quiet { color: var(--mute); }
+  .xbtn { border: 0; background: none; color: var(--mute); font-size: 17px; cursor: pointer; line-height: 1; padding: 2px 4px; }
+  .fixin { margin-top: 7px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .fixin input { padding: 5px 10px; font-size: 13.5px; max-width: 260px; }
+  .chanlabel { font-size: 14px; font-weight: 600; margin: 18px 0 8px; }
+  .chans { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 420px; }
+  .chan { text-align: center; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--panel-border); font-size: 15px; font-weight: 600; color: var(--dim); background: none; font-family: inherit; cursor: pointer; }
+  .chan.on { background: var(--sel-bg); border-color: var(--mute); color: var(--text); }
+  .sendrow { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 18px; }
+  .note { font-size: 13px; color: var(--mute); }
+  .done { text-align: center; padding: 28px 20px; }
+  .done h3 { font-size: 19px; margin-bottom: 6px; }
+  .done .hint { max-width: 460px; margin: 16px auto 0; font-size: 13.5px; }
+
+  .faq h3 { font-size: 15.5px; font-weight: 600; margin: 18px 0 4px; }
+  footer {
+    display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between;
+    padding: 26px clamp(16px, 3vw, 32px); border-top: 1px solid var(--panel-border);
+    color: var(--mute); font-size: 13.5px; margin-top: 56px;
+  }
+  footer nav { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+
+  @media (max-width: 760px) {
+    .benefits, .steps, .example, .row2 { grid-template-columns: 1fr; }
+    header nav a:not(.on) { display: none; }
+    td.typed { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <svg width="22" height="22" viewBox="0 0 64 64" aria-hidden="true">
+    <rect width="64" height="64" rx="14" fill="#101013"/>
+    <rect x="27" y="13" width="10" height="27" rx="5" fill="#F2F0EE"/>
+    <circle cx="32" cy="48" r="6" fill="#5FAEE3"/>
+  </svg>
+  <a href="/" class="name">NajavaRadova<span class="tld">.rs</span></a>
+  <nav>
+    <a href="/">Mapa</a>
+    <a href="/upravnici/" class="on">Za upravnike</a>
+    <a href="https://app.najavaradova.rs/dashboard">Moja stranica</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <div class="eyebrow">Za upravnike zgrada</div>
+    <h1>Manje poziva<span class="calls">
+      <span style="color: var(--struja)">„Zašto nemam struje?“</span>
+      <span style="color: var(--voda)">„Zašto je nestala voda?“</span>
+      <span style="color: var(--grejanje)">„Kad se vraća grejanje?“</span></span></h1>
+    <p class="lead">Čim vodovod, EPS ili toplana objave isključenje na adresi neke od Vaših zgrada, dobijate
+      obaveštenje sa tekstom spremnim za grupu stanara. Sve zgrade, jedna prijava.</p>
+    <div class="ctas">
+      <a class="btn primary" href="#prijava">Pošaljite spisak zgrada</a>
+      <a class="btn ghost" href="#primer">Kako izgleda obaveštenje</a>
+    </div>
+  </section>
+
+  <section>
+    <div class="benefits">
+      <div class="card">
+        <h3>Sve zgrade na jednom mestu</h3>
+        <p>Pratimo svaku adresu koju vodite: struja, voda i grejanje, planirani radovi i kvarovi.</p>
+      </div>
+      <div class="card">
+        <h3>Tekst spreman za stanare</h3>
+        <p>Obaveštenje stiže već sročeno. Kopirate ga i nalepite u Viber grupu zgrade, bez prekucavanja.</p>
+      </div>
+      <div class="card">
+        <h3>Na vreme, ne posle poziva</h3>
+        <p>Zvanične objave proveravamo na svakih 15 minuta. Stanari saznaju od Vas, pre nego što krenu da zovu.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="primer">
+    <h2>Kako izgleda</h2>
+    <div class="example">
+      <div>
+        <div class="phone">
+          <div class="from"><span class="av">!</span>NajavaRadova · Telegram</div>
+          <div class="bubble"><span class="k">VODA · NOVI SAD</span>Planirano isključenje vode u ulici Bulevar oslobođenja 46, dana 28.10.2026, u periodu 08:00 - 14:00.</div>
+          <div class="copybtn">📋 Kopiraj za stanare</div>
+        </div>
+        <p class="arrow">Jedan dodir kopira tekst, a Vi ga nalepite u grupu stanara ↓</p>
+      </div>
+      <div class="phone viber">
+        <div class="from"><span class="av">B</span>Stanari Bulevar oslobođenja 46 · Viber</div>
+        <div class="bubble">Planirano isključenje vode u ulici Bulevar oslobođenja 46, dana 28.10.2026, u periodu 08:00 - 14:00.
+
+<span class="sig">— najavaradova.rs</span></div>
+      </div>
+    </div>
+    <p class="small" style="margin-top:10px">Primer. Prava obaveštenja nose datum i vreme iz zvanične objave i link na nju.</p>
+  </section>
+
+  <section>
+    <h2>Kako počinje</h2>
+    <div class="steps">
+      <div class="card"><h3>Nalepite spisak</h3><p>Adrese zgrada, jednu po redu, ili kolone iz Excel tabele.</p></div>
+      <div class="card"><h3>Proverimo ga odmah</h3><p>Svaku adresu tražimo u adresnom registru RGZ-a i pokažemo Vam šta smo prepoznali.</p></div>
+      <div class="card"><h3>Potvrdite mejl</h3><p>Jedan klik i adrese su unete. Obaveštenja stižu na e-mail ili Telegram.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Gde pratimo</h2>
+    <p><strong>Struju u celoj Srbiji</strong> (EPS Distribucija). Vodu, a u nekim gradovima i grejanje, pratimo u ovim gradovima, i spisak se širi:</p>
+    <p class="cover" id="coverage"><strong>Beograd, Novi Sad, Niš, Kragujevac, Zrenjanin, Pančevo, Čačak, Kraljevo, Leskovac, Vranje, Kruševac, Valjevo, Kikinda, Šabac</strong></p>
+    <p class="small" style="margin-top:10px">Imate zgrade u gradu koji nije na spisku? Pošaljite ih svejedno: struju pratimo svuda, a gradove dodajemo tamo gde nas traže.</p>
+  </section>
+
+  <section id="prijava">
+    <h2>Pošaljite spisak zgrada</h2>
+    <p style="margin-bottom:18px">Besplatno tokom probnog perioda. Adrese se unose čim potvrdite mejl.</p>
+
+    <div class="box" id="stepPaste">
+      <form id="pasteForm">
+        <div class="row2">
+          <label>Grad u kome su zgrade <input id="mCity" placeholder="npr. Novi Sad" autocomplete="address-level2"></label>
+          <label>E-mail <input id="mEmail" type="email" placeholder="ime@firma.rs" autocomplete="email"></label>
+        </div>
+        <label>Ime ili firma <span>(nije obavezno)</span><input id="mName" placeholder="npr. Upravnik Petrović" autocomplete="organization"></label>
+        <label>Adrese zgrada <span>nalepite kolone iz Excel-a ili upišite jednu adresu po redu</span>
+          <textarea id="mText" placeholder="Bulevar oslobođenja 46&#10;Narodnog fronta 12a&#10;Cara Dušana 8, Futog"></textarea>
+        </label>
+        <div class="hp" aria-hidden="true"><label>Website <input id="mWebsite" tabindex="-1" autocomplete="off"></label></div>
+        <div class="hintrow"><span>Drugi grad? Dopišite ga posle zareza.</span><span>Do 200 adresa odjednom.</span></div>
+        <div class="err" id="pasteErr" hidden></div>
+        <div><button class="btn primary" type="submit" id="checkBtn">Proveri adrese</button></div>
+      </form>
+    </div>
+
+    <div class="box" id="stepCheck" hidden>
+      <div class="bar" id="pills"></div>
+      <table><tbody id="rows"></tbody></table>
+      <div class="chanlabel">Obaveštenja putem</div>
+      <div class="chans">
+        <button type="button" class="chan on" data-chan="email">Email</button>
+        <button type="button" class="chan" data-chan="telegram">Telegram</button>
+      </div>
+      <div class="note" style="margin-top:6px">Email je podrazumevan. Telegram izaberite ako ga koristite, možete i oba.</div>
+      <div class="err" id="sendErr" hidden style="margin-top:12px"></div>
+      <div class="sendrow">
+        <button class="btn primary" type="button" id="sendBtn">Pošalji</button>
+        <button class="btn ghost" type="button" id="backBtn">Izmeni spisak</button>
+        <span class="note" id="sendNote"></span>
+      </div>
+      <p class="small" style="margin-top:14px">Čuvamo samo adrese i kontakt koji ste ostavili, isključivo za ova obaveštenja. Ne prodajemo podatke, nema reklama.</p>
+    </div>
+
+    <div class="box done" id="stepDone" hidden>
+      <h3 id="doneTitle"></h3>
+      <p id="doneText"></p>
+      <p class="hint small">Ne vidite mejl? Pogledajte u folderu <strong>Spam</strong> ili <strong>Promocije</strong>, stiže od NajavaRadova.rs. Link važi 24 sata.</p>
+    </div>
+  </section>
+
+  <section class="faq">
+    <h2>Pitanja</h2>
+    <h3>Da li stanari moraju nešto da instaliraju?</h3>
+    <p>Ne. Obaveštenje dobijate Vi i prosleđujete ga kako ste navikli. Stanar koji želi poruku za svoj stan može i sam da se prijavi.</p>
+    <h3>Koliko zgrada mogu da dodam?</h3>
+    <p>Do 200 adresa odjednom, a novi spisak možete poslati kad god želite. Adrese menjate i brišete na svojoj stranici.</p>
+    <h3>Šta ako neku adresu ne prepoznate?</h3>
+    <p>Pokažemo je pre slanja: ispravite je, izaberite predlog ili je izostavite. Ništa ne unosimo nagađanjem.</p>
+    <h3>Da li je ovo zvanični servis komunalnih preduzeća?</h3>
+    <p>Ne. NajavaRadova.rs je nezavisan servis koji čita njihove javne objave, a uz svako obaveštenje je link na zvaničnu objavu.</p>
+    <h3>Šta posle probnog perioda?</h3>
+    <p>Ako se uslovi promene, javićemo unapred, i niko neće biti naplaćen bez svoje saglasnosti.</p>
+  </section>
+</main>
+
+<footer>
+  <span>NajavaRadova.rs — nezavisan servis, nije povezan sa komunalnim preduzećima · Autor i održavanje: <a href="https://koldan.dev">Branimir Koldan</a></span>
+  <nav><a href="/">Mapa</a><a href="/faq">Česta pitanja</a><a href="/privacy">Politika privatnosti</a><a href="/terms">Uslovi korišćenja</a><a href="mailto:obavestenja@najavaradova.rs">Kontakt</a></nav>
+</footer>
+
+<script>
+// A manager's list: paste -> /api/upravnici/check shows what each line is -> only the lines the
+// manager confirmed go to /api/upravnici, which emails the link that loads them
+// (scripts/local_web_server.py, core/managers.py). Nothing is saved before that click.
+(function () {
+  var API_BASE = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+    ? "" : "https://app.najavaradova.rs";
+  var $ = function (id) { return document.getElementById(id); };
+  var rows = [];   // check results, plus .pick (chosen address) and .gone (removed)
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function post(path, body) {
+    return fetch(API_BASE + path, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
+    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); });
+  }
+
+  // The cities are written into the page; the server's list (the one the signup form shows)
+  // replaces them when it answers, so a city added there shows up here without an edit.
+  fetch(API_BASE + "/api/coverage").then(function (r) { return r.json(); }).then(function (d) {
+    var full = d.full || [];
+    if (full.length) $("coverage").innerHTML = "<strong>" + full.map(esc).join(", ") + "</strong>";
+  }).catch(function () {});
+
+  // An "ok" line is confirmed as it is; "num" once kept, "maybe" once a suggestion is picked.
+  // 1 adresa / 2-4 adrese / 5+ adresa - and the words that go with each.
+  function few(n) { return n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20); }
+  function plural(n, one, two, many) { return n % 10 === 1 && n % 100 !== 11 ? one : few(n) ? two : many; }
+
+  function chosen(r) {
+    if (r.gone) return null;
+    if (r.status === "ok") return r;
+    if (r.status === "num" && r.keep) return r;
+    if (r.status === "maybe" && r.pick) return r.pick;
+    return null;
+  }
+  function waiting(r) {
+    return !r.gone && ((r.status === "num" && !r.keep) || (r.status === "maybe" && !r.pick));
+  }
+
+  // What a row shows: a picked suggestion or a kept number counts as confirmed - the same green ✓
+  // as a line found as typed - so nothing still looks like it needs an answer.
+  function shown(r) { return chosen(r) ? "ok" : r.status; }
+
+  function render() {
+    var n = { ok: 0, maybe: 0, num: 0, bad: 0 };
+    rows.forEach(function (r) { if (!r.gone) n[shown(r)]++; });
+    $("pills").innerHTML =
+      (n.ok ? "<span class='pill ok'>✓ " + n.ok + " potvrđeno</span>" : "") +
+      (n.maybe ? "<span class='pill maybe'>? " + n.maybe + " proverite</span>" : "") +
+      (n.num ? "<span class='pill num'>• " + n.num + plural(n.num, " broj nije", " broja nisu", " brojeva nije") + " u registru</span>" : "") +
+      (n.bad ? "<span class='pill bad'>✕ " + n.bad + plural(n.bad, " nije pronađena", " nisu pronađene", " nije pronađeno") + "</span>" : "");
+    var mark = { ok: "✓", maybe: "?", num: "•", bad: "✕" };
+    $("rows").innerHTML = rows.map(function (r, k) {
+      var res;
+      if (r.status === "ok") res = "<b>" + esc(r.ulica + " " + r.broj) + "</b>, " + esc(r.city);
+      else if (r.status === "num") res = "<b>" + esc(r.ulica + " " + r.broj) + "</b>, " + esc(r.city) +
+        "<span class='sub'>Ulica postoji, ali ovog broja nema u registru adresa (nova zgrada?). Obaveštenja stižu za celu ulicu.</span>" +
+        "<div class='opts'><button type='button' class='opt" + (r.keep ? " pick" : "") + "' data-k='" + k + "' data-act='keep'>" +
+        (r.keep ? "✓ Zadržano" : "Zadrži") + "</button></div>";
+      else if (r.status === "maybe") res = esc(r.message) + "<div class='opts'>" + r.options.map(function (o, j) {
+        var on = r.pick === o;
+        return "<button type='button' class='opt" + (on ? " pick" : "") + "' data-k='" + k + "' data-act='pick' data-j='" + j + "'>" +
+          (on ? "✓ " : "") + esc(o.label) + "</button>";
+      }).join("") + "</div>";
+      else res = esc(r.message) + "<div class='fixin'><input value='" + esc(r.line) + "' data-k='" + k + "'>" +
+        "<button type='button' class='opt' data-k='" + k + "' data-act='fix'>Proveri</button></div>";
+      return "<tr" + (r.gone ? " class='gone'" : "") + "><td class='st " + shown(r) + "'>" + mark[shown(r)] + "</td>" +
+        "<td class='typed'>" + esc(r.line.replace(/\t/g, " ⇥ ")) + "</td><td class='res'>" + res + "</td>" +
+        "<td class='x'><button type='button' class='xbtn' title='" + (r.gone ? "Vrati" : "Ukloni") + "' data-k='" + k + "' data-act='gone'>" +
+        (r.gone ? "↺" : "×") + "</button></td></tr>";
+    }).join("");
+    var send = rows.map(chosen).filter(Boolean).length;
+    var wait = rows.filter(waiting).length;
+    var bad = rows.filter(function (r) { return !r.gone && r.status === "bad"; }).length;
+    $("sendBtn").textContent = "Pošalji " + send + plural(send, " adresu", " adrese", " adresa");
+    $("sendBtn").disabled = !send || !channels().length;
+    var parts = [];
+    if (wait) parts.push(wait + plural(wait, " čeka", " čekaju", " čeka") + " Vaš odgovor");
+    if (bad) parts.push(bad + plural(bad, " nije pronađena", " nisu pronađene", " nije pronađeno"));
+    $("sendNote").textContent = "Šaljemo samo potvrđene adrese." + (parts.length ? " " + parts.join(", ") + "." : "");
+  }
+
+  function channels() {
+    return Array.prototype.filter.call(document.querySelectorAll(".chan"), function (b) {
+      return b.classList.contains("on");
+    }).map(function (b) { return b.dataset.chan; });
+  }
+  document.querySelectorAll(".chan").forEach(function (b) {
+    b.onclick = function () {
+      if (b.classList.contains("on") && channels().length === 1) return;   // at least one stays on
+      b.classList.toggle("on");
+      render();
+    };
+  });
+
+  $("rows").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-act]");
+    if (!b) return;
+    var r = rows[+b.dataset.k];
+    if (b.dataset.act === "gone") r.gone = !r.gone;
+    else if (b.dataset.act === "keep") r.keep = !r.keep;
+    else if (b.dataset.act === "pick") { var o = r.options[+b.dataset.j]; r.pick = r.pick === o ? null : o; }
+    else if (b.dataset.act === "fix") {
+      var input = document.querySelector("#rows input[data-k='" + b.dataset.k + "']");
+      b.disabled = true;
+      post("/api/upravnici/check", { city: $("mCity").value, text: input.value }).then(function (res) {
+        var fresh = res.ok && res.data.lines && res.data.lines[0];
+        if (fresh) rows[+b.dataset.k] = fresh;
+        render();
+      }, render);
+      return;
+    }
+    render();
+  });
+
+  $("pasteForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var err = $("pasteErr");
+    err.hidden = true;
+    if (!$("mText").value.trim()) { err.textContent = "Nalepite ili upišite bar jednu adresu."; err.hidden = false; return; }
+    $("checkBtn").disabled = true; $("checkBtn").textContent = "Proveravam…";
+    post("/api/upravnici/check", { city: $("mCity").value, text: $("mText").value }).then(function (res) {
+      $("checkBtn").disabled = false; $("checkBtn").textContent = "Proveri adrese";
+      if (!res.ok) { err.textContent = (res.data && res.data.error) || "Greška, pokušajte ponovo."; err.hidden = false; return; }
+      rows = res.data.lines || [];
+      if (!rows.length) { err.textContent = "Nismo našli nijednu adresu u spisku."; err.hidden = false; return; }
+      $("stepPaste").hidden = true; $("stepCheck").hidden = false;
+      render();
+      $("stepCheck").scrollIntoView({ behavior: "smooth", block: "start" });
+    }, function () {
+      $("checkBtn").disabled = false; $("checkBtn").textContent = "Proveri adrese";
+      err.textContent = "Nema veze sa serverom, pokušajte ponovo."; err.hidden = false;
+    });
+  });
+
+  $("backBtn").onclick = function () { $("stepCheck").hidden = true; $("stepPaste").hidden = false; };
+
+  $("sendBtn").onclick = function () {
+    var err = $("sendErr");
+    err.hidden = true;
+    var email = $("mEmail").value.trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      err.textContent = "Upišite ispravan e-mail (gore, pored grada).";
+      err.hidden = false;
+      $("stepCheck").hidden = true; $("stepPaste").hidden = false; $("mEmail").focus();
+      return;
+    }
+    var picked = rows.map(chosen).filter(Boolean).map(function (a) { return { city: a.city, ulica: a.ulica, broj: a.broj }; });
+    var q = new URLSearchParams(location.search), host = "";
+    try { host = document.referrer ? new URL(document.referrer).hostname : ""; } catch (x) {}
+    $("sendBtn").disabled = true; $("sendBtn").textContent = "Šaljem…";
+    post("/api/upravnici", {
+      email: email, name: $("mName").value.trim(), channels: channels(), addresses: picked,
+      website: $("mWebsite").value, source: { src: q.get("src") || q.get("utm_source") || host, from: "upravnici" }
+    }).then(function (res) {
+      if (!res.ok) { err.textContent = (res.data && res.data.error) || "Greška, pokušajte ponovo."; err.hidden = false; render(); return; }
+      $("stepCheck").hidden = true; $("stepDone").hidden = false;
+      $("doneTitle").textContent = "Poslali smo Vam link na " + email;
+      $("doneText").textContent = "Otvorite ga i adrese (" + res.data.count + ") se odmah unose. Bez lozinke.";
+      $("stepDone").scrollIntoView({ behavior: "smooth", block: "center" });
+    }, function () { err.textContent = "Nema veze sa serverom, pokušajte ponovo."; err.hidden = false; render(); });
+  };
+})();
+</script>
+</body>
+</html>

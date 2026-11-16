@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var m=document.cookie.match(/(?:^|; )theme=([^;]*)/);var t=m?decodeURIComponent(m[1]):null;if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<title>Politika privatnosti — NajavaRadova.rs</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23101013'/%3E%3Crect x='27' y='13' width='10' height='27' rx='5' fill='%23F2F0EE'/%3E%3Ccircle cx='32' cy='48' r='6' fill='%235FAEE3'/%3E%3C/svg%3E">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #101013; --panel-border: #24242A; --hair: #1E1E23;
+    --text: #F2F0EE; --dim: #A5A1AB; --mute: #8C8892;
+    --link: #7FA9F5; --link-hi: #B3CBFA; --voda: #5FAEE3;
+    --sel-bg: #17171B;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) { color-scheme: light; }
+    :root:not([data-theme="dark"]) {
+      --bg: #EFEBE2; --panel-border: #DCD4C3; --hair: #E2DBC9;
+      --text: #2A2620; --dim: #6E6858; --mute: #8B8471;
+      --link: #3763B0; --link-hi: #2A4F8C; --sel-bg: #E6DFCE;
+    }
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #EFEBE2; --panel-border: #DCD4C3; --hair: #E2DBC9;
+    --text: #2A2620; --dim: #6E6858; --mute: #8B8471;
+    --link: #3763B0; --link-hi: #2A4F8C; --sel-bg: #E6DFCE;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .theme-toggle {
+    display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 20px;
+    background: var(--sel-bg); border: 1px solid var(--panel-border); margin-left: auto;
+  }
+  .theme-toggle button {
+    all: unset; width: 26px; height: 24px; display: flex; align-items: center; justify-content: center;
+    border-radius: 16px; font-size: 12.5px; line-height: 1; cursor: pointer; color: var(--mute);
+  }
+  .theme-toggle button.on { background: var(--bg); color: var(--text); }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; line-height: 1.6;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { color: var(--link-hi); }
+  header {
+    display: flex; align-items: center; gap: 10px;
+    height: 56px; padding: 0 clamp(18px, 3vw, 32px);
+    border-bottom: 1px solid var(--panel-border);
+  }
+  header .name { font-size: 17px; font-weight: 700; letter-spacing: -.02em; }
+  header .name .tld { color: var(--mute); font-weight: 400; }
+  main {
+    max-width: 680px; margin: 0 auto;
+    padding: clamp(32px, 6vw, 56px) clamp(20px, 4vw, 32px) 80px;
+  }
+  h1 { font-size: clamp(26px, 4vw, 32px); font-weight: 700; letter-spacing: -.03em; margin-bottom: 6px; }
+  .updated { font-size: 13.5px; color: var(--mute); margin-bottom: 36px; }
+  h2 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; margin: 32px 0 10px; }
+  p, li { font-size: 15px; color: var(--dim); margin-bottom: 10px; }
+  ul { padding-left: 20px; margin-bottom: 10px; }
+  strong { color: var(--text); font-weight: 600; }
+  footer {
+    display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between; align-items: center;
+    padding: 26px clamp(20px, 3vw, 32px);
+    border-top: 1px solid var(--panel-border);
+    color: var(--mute); font-size: 13.5px;
+  }
+  footer nav { display: flex; gap: 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <svg width="22" height="22" viewBox="0 0 64 64" aria-hidden="true">
+    <rect width="64" height="64" rx="14" fill="#101013"/>
+    <rect x="27" y="13" width="10" height="27" rx="5" fill="#F2F0EE"/>
+    <circle cx="32" cy="48" r="6" fill="#5FAEE3"/>
+  </svg>
+  <a href="/" class="name">NajavaRadova<span class="tld">.rs</span></a>
+  <div class="theme-toggle" id="themeToggle" role="group" aria-label="Izgled stranice">
+    <button type="button" data-theme-choice="system" title="Sistem" aria-label="Sistem">🖥</button>
+    <button type="button" data-theme-choice="dark" title="Tamna tema" aria-label="Tamna tema">🌙</button>
+    <button type="button" data-theme-choice="light" title="Svetla tema" aria-label="Svetla tema">☀️</button>
+  </div>
+</header>
+
+<main>
+  <h1>Politika privatnosti</h1>
+  <p class="updated">Poslednja izmena: 16. oktobar 2026.</p>
+
+  <p>
+    NajavaRadova.rs prikuplja samo podatke neophodne da bismo ti poslali obaveštenje kad najava
+    o prekidu vode, struje ili grejanja obuhvata tačno tvoju adresu. Ovaj dokument objašnjava
+    šta prikupljamo, zašto, i kako to možeš da promeniš ili obrišeš.
+  </p>
+
+  <h2>Ko je rukovalac podacima</h2>
+  <p>
+    Servis vodi Branimir Koldan, kao nezavisan, nekomercijalan projekat. Kontakt za sva pitanja
+    u vezi sa privatnošću: <a href="mailto:obavestenja@najavaradova.rs">obavestenja@najavaradova.rs</a>.
+  </p>
+
+  <h2>Koje podatke prikupljamo</h2>
+  <ul>
+    <li><strong>Adresa</strong> koju prijaviš (grad/mesto, ulica, kućni broj) — da bismo znali koje
+      najave se tiču tebe.</li>
+    <li><strong>Email adresa</strong> — služi za prijavu na tvoju stranicu (link za potvrdu,
+      bez lozinke) i, ako je izabereš, za slanje obaveštenja.</li>
+    <li><strong>Telegram chat ID i korisničko ime (@handle)</strong> — samo ako izabereš Telegram
+      kao kanal za obaveštenja, dobijeni automatski kad povežeš bota sa svojim nalogom. Korisničko
+      ime se prikazuje na tvojoj stranici da vidiš na koji Telegram nalog stižu poruke.</li>
+    <li><strong>IP adresa</strong> — privremeno se drži u memoriji servera (najviše 24 sata) radi
+      ograničavanja učestalosti zahteva (zaštita od zloupotrebe obrasca i bota). Ne povezuje se
+      sa tvojim nalogom i ne upisuje se u bazu.</li>
+    <li><strong>Tehnički dnevnici (logovi)</strong> — server iza Cloudflare mreže beleži samo
+      vreme i putanju zahteva (tvoju IP adresu vidi Cloudflare kao posrednik, ne naš server).
+      Ovi dnevnici služe isključivo za dijagnostiku i bezbednost i periodično se brišu.</li>
+    <li><strong>Odakle si došao/la na sajt</strong> — samo naziv sajta (npr. google ili facebook)
+      i stranica grada preko koje si stigao/la, zabeleženi jednom, pri prijavi. Tako znamo koji
+      kanali dovode ljude. Ne upisuje se u tvoj pregledač i ne prati te dalje.</li>
+  </ul>
+  <p>Ne tražimo ime, broj telefona, niti bilo koji drugi podatak van ovoga.</p>
+
+  <h2>Zašto ih čuvamo i po kom pravnom osnovu</h2>
+  <p>
+    Adresu, email i (opciono) Telegram podatke obrađujemo <strong>radi izvršenja usluge koju si
+    zatražio/la</strong> — poređenja nove najave sa tvojom adresom i slanja obaveštenja (pravni
+    osnov: izvršenje ugovora, član 12 stav 1 tačka 2 Zakona o zaštiti podataka o ličnosti / član
+    6(1)(b) GDPR-a). IP adresu i pristupne logove obrađujemo na osnovu <strong>legitimnog
+    interesa</strong> za bezbednost servisa (član 12 stav 1 tačka 6 / član 6(1)(f)). Naziv sajta
+    sa kog si došao/la obrađujemo na osnovu legitimnog interesa da znamo koji kanali dovode
+    korisnike (isti osnov).
+  </p>
+  <p>
+    Ne koristimo podatke ni u kakve druge svrhe — nema reklama, nema profilisanja, nema
+    automatizovanog donošenja odluka, nema prodaje podataka.
+  </p>
+
+  <h2>Sa kim delimo podatke (obrađivači)</h2>
+  <p>Podatke obrađuju samo servisi neophodni za rad sajta i isporuku obaveštenja, i niko drugi:</p>
+  <ul>
+    <li><strong>Telegram</strong> (Telegram FZ-LLC, UAE) — Telegram Bot API, ako izabereš Telegram
+      kao kanal za obaveštenja.</li>
+    <li><strong>Brevo</strong> (Sendinblue SAS, Francuska) — slanje email poruka: link za prijavu
+      na tvoju stranicu i obaveštenja ako izabereš email kao kanal.</li>
+    <li><strong>Cloudflare</strong> (Cloudflare, Inc., SAD) — hosting sajta, mreža za isporuku
+      sadržaja, javna mapa i anonimna statistika poseta (vidi „Kolačići i praćenje“). Dobija
+      tvoju IP adresu kao svaki posrednik u saobraćaju.</li>
+    <li><strong>OpenFreeMap</strong> — isporučuje pozadinske pločice mape; pri učitavanju mape
+      vidi tvoju IP adresu. Ne šaljemo mu nijedan drugi podatak.</li>
+  </ul>
+  <p>
+    Neki od ovih obrađivača su izvan Republike Srbije i Evropske unije (Telegram — UAE,
+    Cloudflare — SAD). Prenos se vrši na osnovu odluke o adekvatnosti gde ona postoji, odnosno uz
+    odgovarajuće mere zaštite (standardne ugovorne klauzule), u skladu sa Zakonom o zaštiti
+    podataka o ličnosti.
+  </p>
+  <p>
+    Ne delimo podatke sa komunalnim preduzećima, ne prodajemo ih trećim licima, i ne koristimo ih
+    u marketinške svrhe.
+  </p>
+
+  <h2>Koliko dugo čuvamo podatke</h2>
+  <p>
+    Jednu adresu možeš isključiti u bilo kom trenutku (prekidač na tvojoj stranici, jedan klik na
+    link u email poruci, ili komanda <code>/odjava</code> u Telegramu) — nakon toga se ta adresa
+    više ne koristi za slanje obaveštenja, ali ostaje vidljiva na tvojoj stranici da je po potrebi
+    ponovo uključiš.
+  </p>
+  <p>
+    Za trajno brisanje — cele adrese, naloga i email adrese, bez ostatka — na tvojoj stranici
+    postoji dugme "Obriši sve moje podatke". To je trenutno i nepovratno. Podatak o tome odakle
+    si došao/la čuva se uz nalog i briše se zajedno s njim.
+  </p>
+  <p>
+    IP adresa u memoriji za ograničavanje učestalosti zahteva nestaje nakon najviše 24 sata.
+    Tehnički dnevnici servera se periodično brišu i ne sadrže tvoju IP adresu.
+  </p>
+
+  <h2>Tvoja prava</h2>
+  <p>
+    Imaš pravo na pristup svojim podacima, ispravku, brisanje, ograničenje obrade, prigovor na
+    obradu i prenosivost podataka. Trajno brisanje možeš uraditi sam/a, odmah, na svojoj stranici
+    (app.najavaradova.rs/dashboard) — ili nam pisati na
+    <a href="mailto:obavestenja@najavaradova.rs">obavestenja@najavaradova.rs</a> za bilo koje
+    drugo pravo ili ako ti nešto ne uspe. Odgovaramo najkasnije u roku od 30 dana.
+  </p>
+  <p>
+    Ako smatraš da obrađujemo tvoje podatke suprotno propisima, imaš pravo da podneseš pritužbu
+    <strong>Povereniku za informacije od javnog značaja i zaštitu podataka o ličnosti</strong>
+    (Bulevar kralja Aleksandra 15, 11120 Beograd, <a href="https://www.poverenik.rs"
+    target="_blank" rel="noopener">www.poverenik.rs</a>).
+  </p>
+
+  <h2>Kolačići i praćenje</h2>
+  <p>Koristimo dve kategorije, i to je sve — nema analitičkih, reklamnih ili trećih kolačića:</p>
+  <ul>
+    <li><strong>Neophodni</strong> — jedan funkcionalni kolačić na tvojoj stranici
+      (app.najavaradova.rs/dashboard) koji te drži prijavljenim/om. Bez njega prijava ne bi
+      radila, pa je uvek uključen i ne traži saglasnost (izuzet po GDPR/ePrivacy pravilima za
+      strogo neophodne kolačiće).</li>
+    <li><strong>Lokacija i personalizacija</strong> — opciono, isključeno dok ga ne prihvatiš u
+      baneru na dnu stranice. Dok ne daš pristanak, sajt <em>uopšte ne traži</em> podatak o
+      lokaciji. Kada prihvatiš, pregledač pri sledećem učitavanju mape traži od našeg servera
+      procenu lokacije na nivou grada; tu procenu daje Cloudflare na osnovu IP adrese (bez
+      pristupa GPS-u), koristi se samo u tvom pregledaču da mapa odmah prikaže tvoj grad umesto
+      cele Srbije, i ne čuva se ni kod nas ni kod Cloudflare-a. Tvoj izbor (da/ne) čuva se u
+      localStorage tvog pregledača, ne na serveru, i menjaš ga brisanjem podataka sajta iz
+      podešavanja pregledača.</li>
+  </ul>
+  <p>
+    Dugme "Moja lokacija" na mapi je zaseban, već-eksplicitan pristanak — traži dozvolu direktno
+    od tvog pregledača (GPS/mreža), nezavisno od ove dve kategorije, i koristi se samo kad ga
+    sam/a klikneš. Ta tačna lokacija se takođe ne čuva.
+  </p>
+  <p>
+    <strong>Statistika poseta.</strong> Da bismo znali koliko ljudi koristi sajt i koliko se brzo
+    učitava, koristimo Cloudflare Web Analytics. Ne koristi kolačiće ni localStorage, ne prati te
+    od sajta do sajta i ne pravi tvoj profil — vidimo samo zbirne brojeve: broj poseta po
+    stranici, odakle je poseta došla (npr. Google), zemlju, vrstu uređaja i pregledača i brzinu
+    učitavanja. Iz tih brojeva ne možemo da prepoznamo nijednu osobu.
+  </p>
+
+  <h2>Bezbednost</h2>
+  <p>
+    Sav saobraćaj ka sajtu ide preko HTTPS enkripcije. Podaci se čuvaju na serveru koji nije
+    javno dostupan van ove aplikacije. Nemamo lozinke — prijava ide isključivo preko
+    jednokratnog linka poslatog na tvoj mejl, tako da nema lozinke koja bi ikad mogla procuriti
+    ili biti pogođena.
+  </p>
+
+  <h2>Izmene ove politike</h2>
+  <p>
+    Ova politika se može povremeno ažurirati kako se servis razvija — datum poslednje izmene
+    uvek stoji na vrhu ove stranice.
+  </p>
+</main>
+
+<footer>
+  <span>NajavaRadova.rs &mdash; nezavisan servis, nije povezan sa komunalnim preduzećima · Autor i održavanje: <a href="https://koldan.dev">Branimir Koldan</a></span>
+  <nav>
+    <a href="/">Mapa</a>
+    <a href="/faq">Česta pitanja</a>
+    <a href="/terms">Uslovi korišćenja</a>
+    <a href="mailto:obavestenja@najavaradova.rs">Kontakt</a>
+  </nav>
+</footer>
+
+<script>
+// Same three-state toggle as web/index.html - see that file's comment. Same cookie
+// ("domain=najavaradova.rs"), so a choice made here, on the main site, or on the dashboard
+// (app.najavaradova.rs) stays in sync everywhere.
+(function () {
+  var THEME_COOKIE = "theme";
+  var THEME_COOKIE_DOMAIN = "najavaradova.rs";
+  function storedTheme() {
+    try {
+      var m = document.cookie.match(/(?:^|; )theme=([^;]*)/);
+      var t = m ? decodeURIComponent(m[1]) : null;
+      return (t === "light" || t === "dark") ? t : null;
+    } catch (e) { return null; }
+  }
+  function updateUI() {
+    var choice = storedTheme() || "system";
+    var btns = document.querySelectorAll("#themeToggle button");
+    for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("on", btns[i].dataset.themeChoice === choice);
+  }
+  function setTheme(choice) {
+    try {
+      var attrs = "; domain=" + THEME_COOKIE_DOMAIN + "; path=/; samesite=lax; secure";
+      if (choice === "system") document.cookie = THEME_COOKIE + "=; max-age=0" + attrs;
+      else document.cookie = THEME_COOKIE + "=" + encodeURIComponent(choice) + "; max-age=31536000" + attrs;
+    } catch (e) {}
+    if (choice === "system") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", choice);
+    updateUI();
+  }
+  var btns = document.querySelectorAll("#themeToggle button");
+  for (var i = 0; i < btns.length; i++) btns[i].onclick = function () { setTheme(this.dataset.themeChoice); };
+  updateUI();
+})();
+</script>
+</body>
+</html>
