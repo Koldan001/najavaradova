@@ -19,7 +19,10 @@ address registry extract and all secrets are excluded, so it is meant to be read
 
 ## Architecture
 
-![System architecture](docs/architecture.svg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.svg">
+  <img alt="System architecture" src="docs/architecture-light.svg">
+</picture>
 
 A scrape cycle runs as one process (`main.py`). Each scraper fetches its source and hands new or
 changed notices to the matchmaker. Notices are deduplicated by a hash of their text, so an
