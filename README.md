@@ -1,99 +1,63 @@
 # NajavaRadova.rs
 
-**Outage alerts for Serbia, delivered to your exact address.**
-Live at **[najavaradova.rs](https://najavaradova.rs)** · built and run by [Branimir Koldan](https://koldan.dev)
+Planned power, water and heating outage alerts for addresses in Serbia.
+Live at [najavaradova.rs](https://najavaradova.rs).
 
-Serbian utilities publish planned power, water and heating outages on their websites, as free text
-with lists of streets and house numbers. Almost nobody reads them. NajavaRadova reads them for you:
-it scrapes 22 utility sites, turns each notice into structured data with an LLM, works out which
-addresses are affected, and sends a message on Telegram or by email to the people who live there.
-It also publishes a public map of all current outages and an SEO page per city.
+Utilities in Serbia post planned outages on their websites as long blocks of text: street names,
+house number ranges, dates. Hardly anyone reads them. This service reads them every 15 minutes,
+figures out which addresses are affected and sends a Telegram message or an email to the people
+who signed up for those addresses. It also keeps a public map of current outages.
 
-It is a live service with real users, and I have run it alone since August 2026: code, server,
-deploys, monitoring and on-call.
+I built it and run it on my own: the code, the server, deploys and fixing things when they break.
+It has been live with real users since September 2026.
 
-> This repository is a public snapshot of the private production repo, published as a portfolio
-> piece. It is not set up to be cloned and run as-is: the street database, address registry and
-> secrets are not included.
+This repo is a snapshot of the private production repo. The street database, address registry and
+secrets are not included, so it won't run as-is.
 
----
-
-## How it works
+## Architecture
 
 ![System architecture](docs/architecture.svg)
 
-1. **Scrape.** One scraper per utility (`scrapers/`). A dead site never stops the others, and a
-   source-health watchdog notices when a site goes quiet or serves a stale cache.
-2. **Parse.** The notice text goes to Gemini with a strict schema (`parser.py`): streets, house
-   number ranges, odd/even sides, settlements, dates and times. The output is validated before
-   anything uses it.
-3. **Check.** Risky readings (a whole town affected, an odd date) are held for a second model's
-   opinion before any alert goes out (`core/send_check.py`). If the system is unsure, it holds
-   instead of guessing.
-4. **Locate.** Streets are resolved against the official RGZ address registry and OpenStreetMap,
-   then turned into H3 hexagons (`spatial/`). A street with the same name in the next town can
-   never match.
-5. **Match and send.** Each registered address is checked against the affected streets and house
-   numbers (`core/matchmaker.py`). One message per person, follow-ups when times change, quiet
-   hours on Telegram, and late messages are skipped rather than sent after the fact.
+Each utility has its own scraper in `scrapers/`. If one site is down the rest keep going, and a
+watchdog tells me when a source goes quiet for too long.
 
-## Infrastructure
+The notice text is sent to Gemini and comes back as JSON that has to fit a fixed schema
+(`parser.py`). After that, plain Python rules check the result. Readings that look risky, like a
+whole town being affected or a strange date, are held until a second model agrees
+(`core/send_check.py`). I would rather send nothing than send a wrong alert.
 
-| Piece | How |
-|---|---|
-| App server | Oracle Cloud VM, `docker compose` with 7 services: API, Caddy, Telegram bot, two senders, scraper loop, watchdog |
-| TLS / edge | Caddy with a Cloudflare origin certificate, Cloudflare proxy in front |
-| Static site + map | Cloudflare Pages, deployed from `web/` on every push |
-| Map data API | Cloudflare Worker + KV (`cf/worker.js`) |
-| CI/CD | GitHub Actions: tests on every PR; on merge to `main`, SSH deploy to the VM (`deploy/update.sh`) |
-| Backups | Nightly SQLite backup to Cloudflare R2 (systemd timer), with a restore script (`deploy/`) |
-| Monitoring | Watchdog service sends me a Telegram alert on a stale pipeline, failing scrapers, stuck messages or a missed backup |
-| Email | Brevo SMTP, SPF + DKIM, one-click unsubscribe |
+Streets are looked up in the official RGZ address registry, with OpenStreetMap as a fallback, and
+converted to H3 hexagons (`spatial/`). The matcher in `core/matchmaker.py` then compares every
+registered address against the affected streets and house numbers. Messages go into a queue in
+SQLite and two small workers send them out.
 
-## Making the LLM dependable
+## Running it
 
-The hard part is not calling the model, it is trusting what comes back. A wrong alert at 2 a.m. is
-worse than no alert.
+Everything runs in Docker Compose on one Oracle Cloud VM, behind Caddy and Cloudflare. The public
+site and map are on Cloudflare Pages, and the map data is served by a Cloudflare Worker.
 
-- **Structured output only.** The model fills a fixed schema; free text never reaches a user unchecked.
-- **Rules after the model.** Deterministic checks catch known failure modes: whole-word street
-  matching, building-only addresses ("bb"), district headings that are not streets, re-spelled
-  duplicates.
-- **Second opinion.** Alerts that would reach a whole area are held until a second model agrees.
-- **Golden test set.** Hand-labelled real notices (`tests/golden/`) are replayed on every change, and
-  `scripts/eval_model.py` scores candidate models against them before any model switch.
+GitHub Actions runs the tests on every pull request. Merging to `main` deploys to the VM over SSH
+(`deploy/update.sh`). The database is backed up to Cloudflare R2 every night, and
+`deploy/restore_from_r2.sh` brings it back.
 
 ## Tests
 
-830+ tests (`pytest`), run in CI on every pull request. Tests that need the large street and
-address databases skip themselves when those files are not present, as here.
+About 830 pytest tests. `tests/golden/` holds real notices I labelled by hand, and they are
+replayed on every change so a fix in one place does not quietly break another.
+`scripts/eval_model.py` uses the same set to compare models before I switch.
 
 ```bash
 pip install -r requirements.txt
 GEMINI_API_KEY=placeholder pytest
 ```
 
+Tests that need the street and address databases skip themselves when those files are missing.
+
 ## Stack
 
-Python 3.12 · SQLite · H3 · Shapely · pyproj · Gemini API · Docker Compose · Caddy · GitHub Actions ·
-Cloudflare Pages, Workers, KV, R2 · Telegram Bot API · Brevo SMTP · MapLibre
-
-## Layout
-
-```
-scrapers/   one scraper per utility
-parser.py   LLM call + output schema
-core/       matching, delivery, auth, send checks, source health, retention
-spatial/    geocoding and H3 geometry
-workers/    Telegram bot, Telegram + email senders, watchdog
-scripts/    web server, site and city-page builders, model evaluation, ops tools
-web/        public site, map, city pages (Cloudflare Pages)
-app/        logged-in dashboard
-cf/         Cloudflare Worker for the map data
-deploy/     VM bootstrap, update, backup and restore scripts
-tests/      pytest suite + golden notice set
-```
+Python 3.12, SQLite, H3, Shapely, Gemini API, Docker Compose, Caddy, GitHub Actions, Cloudflare
+(Pages, Workers, KV, R2), Telegram Bot API, Brevo, MapLibre.
 
 ---
 
-© Branimir Koldan. Source shared for viewing as a portfolio; all rights reserved.
+Branimir Koldan, [koldan.dev](https://koldan.dev). The code is here to read; all rights reserved.
